@@ -1,6 +1,4 @@
-// pages/api/auth/[...nextauth].js
-
-import NextAuth from "next-auth/next"; // ✅ critical change
+import NextAuth from "next-auth"; // ✅ Correct for Pages Router
 import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
 import clientPromise from "../../../lib/mongodb";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -38,23 +36,20 @@ const authOptions = {
                         throw new Error("Subscription expired.");
                 }
 
-                // ✅ Subscription expiration logic
                 if (profile.subscription && profile.subscriptionStart) {
                     const start = new Date(profile.subscriptionStart);
                     const match = profile.subscription.match(/^(\d+)(minute|day|month|year)s?$/);
                     if (match) {
                         const [_, value, unit] = match;
                         const expiry = new Date(start);
-                        const intVal = parseInt(value, 10);
-
                         switch (unit) {
-                            case "minute": expiry.setMinutes(expiry.getMinutes() + intVal); break;
-                            case "day": expiry.setDate(expiry.getDate() + intVal); break;
-                            case "month": expiry.setMonth(expiry.getMonth() + intVal); break;
-                            case "year": expiry.setFullYear(expiry.getFullYear() + intVal); break;
+                            case "minute": expiry.setMinutes(expiry.getMinutes() + parseInt(value)); break;
+                            case "day": expiry.setDate(expiry.getDate() + parseInt(value)); break;
+                            case "month": expiry.setMonth(expiry.getMonth() + parseInt(value)); break;
+                            case "year": expiry.setFullYear(expiry.getFullYear() + parseInt(value)); break;
                         }
 
-                        if (Date.now() > expiry.getTime()) {
+                        if (new Date() > expiry) {
                             await db.collection("user_profiles").updateOne(
                                 { username },
                                 { $set: { status: "expired" } }
@@ -70,7 +65,7 @@ const authOptions = {
     ],
     session: {
         strategy: "jwt",
-        maxAge: 60 * 60 * 24, // 1 day
+        maxAge: 60 * 60 * 24,
     },
     pages: {
         signIn: "/nulledbot/login",
@@ -78,9 +73,7 @@ const authOptions = {
     },
     callbacks: {
         async jwt({ token, user }) {
-            if (user) {
-                token.username = user.username;
-            }
+            if (user) token.username = user.username;
             return token;
         },
         async session({ session, token }) {
@@ -100,6 +93,6 @@ const authOptions = {
     }
 };
 
-// ✅ Modern export: pass only `authOptions` to NextAuth
-const handler = NextAuth(authOptions);
-export default handler;
+export default async function handler(req, res) {
+    return await NextAuth(req, res, authOptions);
+}
