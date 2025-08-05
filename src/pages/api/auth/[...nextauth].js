@@ -4,13 +4,13 @@ import clientPromise from "../../../lib/mongodb";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 
-const handler = NextAuth({
+const authOptions = {
     adapter: MongoDBAdapter(clientPromise),
     providers: [
         CredentialsProvider({
             name: "Credentials",
             credentials: {
-                username: { label: "Username", type: "text", placeholder: "yourusername" },
+                username: { label: "Username", type: "text" },
                 key: { label: "Key", type: "password" },
             },
             async authorize(credentials) {
@@ -36,30 +36,21 @@ const handler = NextAuth({
                         throw new Error("Subscription expired.");
                 }
 
-                // ✅ Subscription expiry logic
+                // ✅ Subscription check
                 if (profile.subscription && profile.subscriptionStart) {
                     const start = new Date(profile.subscriptionStart);
                     const match = profile.subscription.match(/^(\d+)(minute|day|month|year)s?$/);
                     if (match) {
-                        const value = parseInt(match[1]);
-                        const unit = match[2];
-                        const expiryDate = new Date(start);
+                        const [_, value, unit] = match;
+                        const expiry = new Date(start);
                         switch (unit) {
-                            case "minute":
-                                expiryDate.setMinutes(expiryDate.getMinutes() + value);
-                                break;
-                            case "day":
-                                expiryDate.setDate(expiryDate.getDate() + value);
-                                break;
-                            case "month":
-                                expiryDate.setMonth(expiryDate.getMonth() + value);
-                                break;
-                            case "year":
-                                expiryDate.setFullYear(expiryDate.getFullYear() + value);
-                                break;
+                            case "minute": expiry.setMinutes(expiry.getMinutes() + parseInt(value)); break;
+                            case "day": expiry.setDate(expiry.getDate() + parseInt(value)); break;
+                            case "month": expiry.setMonth(expiry.getMonth() + parseInt(value)); break;
+                            case "year": expiry.setFullYear(expiry.getFullYear() + parseInt(value)); break;
                         }
 
-                        if (new Date() > expiryDate) {
+                        if (new Date() > expiry) {
                             await db.collection("user_profiles").updateOne(
                                 { username },
                                 { $set: { status: "expired" } }
@@ -79,7 +70,6 @@ const handler = NextAuth({
     },
     pages: {
         signIn: "/nulledbot/login",
-        signOut: "/nulledbot/logout",
         error: "/nulledbot/login",
     },
     callbacks: {
@@ -104,8 +94,9 @@ const handler = NextAuth({
             return session;
         }
     }
-});
+};
 
-// ✅ Correct default export for API route
-export { handler as GET, handler as POST }; // for App Router
-export default handler; // for Pages Router compatibility
+const handler = async (req, res) => await NextAuth(req, res, authOptions);
+
+// ✅ DO NOT use anonymous exports — they get minified
+export default handler;
