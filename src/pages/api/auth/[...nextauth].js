@@ -4,7 +4,7 @@ import clientPromise from "../../../lib/mongodb";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 
-export const authOptions = {
+const handler = NextAuth({
     adapter: MongoDBAdapter(clientPromise),
     providers: [
         CredentialsProvider({
@@ -45,10 +45,18 @@ export const authOptions = {
                         const unit = match[2];
                         const expiryDate = new Date(start);
                         switch (unit) {
-                            case "minute": expiryDate.setMinutes(expiryDate.getMinutes() + value); break;
-                            case "day": expiryDate.setDate(expiryDate.getDate() + value); break;
-                            case "month": expiryDate.setMonth(expiryDate.getMonth() + value); break;
-                            case "year": expiryDate.setFullYear(expiryDate.getFullYear() + value); break;
+                            case "minute":
+                                expiryDate.setMinutes(expiryDate.getMinutes() + value);
+                                break;
+                            case "day":
+                                expiryDate.setDate(expiryDate.getDate() + value);
+                                break;
+                            case "month":
+                                expiryDate.setMonth(expiryDate.getMonth() + value);
+                                break;
+                            case "year":
+                                expiryDate.setFullYear(expiryDate.getFullYear() + value);
+                                break;
                         }
 
                         if (new Date() > expiryDate) {
@@ -67,7 +75,7 @@ export const authOptions = {
     ],
     session: {
         strategy: "jwt",
-        maxAge: 60 * 60 * 24, // 1 day
+        maxAge: 60 * 60 * 24,
     },
     pages: {
         signIn: "/nulledbot/login",
@@ -96,7 +104,8 @@ export const authOptions = {
             return session;
         }
     }
-};
+});
 
-// ✅ For Pages Router use this export:
-export default (req, res) => NextAuth(req, res, authOptions);
+// ✅ Correct default export for API route
+export { handler as GET, handler as POST }; // for App Router
+export default handler; // for Pages Router compatibility
