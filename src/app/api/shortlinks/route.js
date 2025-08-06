@@ -102,15 +102,6 @@ export async function PUT(req) {
     const username = session.user.username;
     const subscriptionType = await getSubscriptionType(username);
 
-    if (subscriptionType === "free" && (allowedDevice || connectionType || allowedCountry || allowedIsp)) {
-        return new Response(
-            JSON.stringify({
-                error: "Free users cannot use advanced filters (device, ISP, country, or connection type)",
-            }),
-            { status: 403 }
-        );
-    }
-
     const client = await clientPromise;
     const db = client.db();
 
@@ -129,10 +120,10 @@ export async function PUT(req) {
     };
 
     if (subscriptionType !== "free") {
-        updateFields.allowedDevice = allowedDevice;
-        updateFields.connectionType = connectionType;
-        updateFields.allowedCountry = allowedCountry;
-        updateFields.allowedIsp = allowedIsp;
+        if (allowedDevice !== undefined) updateFields.allowedDevice = allowedDevice;
+        if (connectionType !== undefined) updateFields.connectionType = connectionType;
+        if (allowedCountry !== undefined) updateFields.allowedCountry = allowedCountry;
+        if (allowedIsp !== undefined) updateFields.allowedIsp = allowedIsp;
     }
 
     const result = await db.collection("shortlinks").updateOne(

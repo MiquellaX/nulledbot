@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { UAParser } from "ua-parser-js";
 
 const rateLimitStore = new Map();
-const RATE_LIMIT = 5;
+const RATE_LIMIT = 3;
 const WINDOW_SIZE = 60 * 1000;
 
 function rateLimit(ip) {
