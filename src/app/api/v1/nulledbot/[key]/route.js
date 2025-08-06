@@ -50,13 +50,15 @@ export async function GET(req, context) {
     );
 
     let ip =
-        req.headers.get("x-real-ip")?.trim() ||
+        req.headers.get("x-visitor-real-api")?.trim() ||
         req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
         "8.8.8.8";
 
     if (ip === "::1" || ip === "127.0.0.1") {
         ip = "8.8.8.8";
     }
+
+    console.log("HEADERS:", Object.fromEntries(req.headers.entries()));
 
     if (!rateLimit(ip)) {
         return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
