@@ -1,7 +1,5 @@
 import clientPromise from "../../../lib/mongodb";
-import { getToken } from "next-auth/jwt";
-
-const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET;
+import { auth } from "@/auth";
 
 async function getSubscriptionType(username) {
     const client = await clientPromise;
@@ -11,35 +9,36 @@ async function getSubscriptionType(username) {
 }
 
 export async function GET(req) {
-    const token = await getToken({ req, secret: NEXTAUTH_SECRET });
-    console.log("[DEBUG] TOKEN: ", token);
-    if (!token || !token.username) {
-        return new Response(JSON.stringify({ error: "Unauthorized", token, headers: Object.fromEntries(req.headers) }), { status: 401 });
+    const session = await auth();
+
+    if (!session || !session.user || !session.user.username) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
+
     const client = await clientPromise;
     const db = client.db();
-    const shortlinks = await db.collection("shortlinks").find({ owner: token.username }).toArray();
+    const shortlinks = await db.collection("shortlinks").find({ owner: session.user.username }).toArray();
+
     return new Response(JSON.stringify(shortlinks), { status: 200 });
 }
 
 export async function POST(req) {
-    const token = await getToken({ req, secret: NEXTAUTH_SECRET });
+    const session = await auth();
 
-    if (!token || !token.username) {
-        return new Response(JSON.stringify({ error: "Unauthorized", token, headers: Object.fromEntries(req.headers) }), { status: 401 });
+    if (!session || !session.user || !session.user.username) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
     const { url, key, statusCode, allowedDevice, connectionType, allowedCountry, allowedIsp } = await req.json();
+
     if (!url || !key) {
         return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400 });
     }
 
-    const subscriptionType = await getSubscriptionType(token.username);
+    const username = session.user.username;
+    const subscriptionType = await getSubscriptionType(username);
 
-    if (
-        subscriptionType === "free" &&
-        (allowedDevice || connectionType || allowedCountry || allowedIsp)
-    ) {
+    if (subscriptionType === "free" && (allowedDevice || connectionType || allowedCountry || allowedIsp)) {
         return new Response(
             JSON.stringify({
                 error: "Free users cannot use advanced filters (device, ISP, country, or connection type)",
@@ -50,14 +49,15 @@ export async function POST(req) {
 
     const client = await clientPromise;
     const db = client.db();
-    const exists = await db.collection("shortlinks").findOne({ owner: token.username, key });
+
+    const exists = await db.collection("shortlinks").findOne({ owner: username, key });
 
     if (exists) {
         return new Response(JSON.stringify({ error: "Key already exists" }), { status: 409 });
     }
 
     const doc = {
-        owner: token.username,
+        owner: username,
         url,
         key,
         status: "ACTIVE",
@@ -78,9 +78,9 @@ export async function POST(req) {
 }
 
 export async function PUT(req) {
-    const token = await getToken({ req, secret: NEXTAUTH_SECRET });
+    const session = await auth();
 
-    if (!token || !token.username) {
+    if (!session || !session.user || !session.user.username) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
@@ -99,12 +99,10 @@ export async function PUT(req) {
         return new Response(JSON.stringify({ error: "Missing originalKey, key, or url" }), { status: 400 });
     }
 
-    const subscriptionType = await getSubscriptionType(token.username);
+    const username = session.user.username;
+    const subscriptionType = await getSubscriptionType(username);
 
-    if (
-        subscriptionType === "free" &&
-        (allowedDevice || connectionType || allowedCountry || allowedIsp)
-    ) {
+    if (subscriptionType === "free" && (allowedDevice || connectionType || allowedCountry || allowedIsp)) {
         return new Response(
             JSON.stringify({
                 error: "Free users cannot use advanced filters (device, ISP, country, or connection type)",
@@ -117,7 +115,7 @@ export async function PUT(req) {
     const db = client.db();
 
     if (originalKey !== key) {
-        const existing = await db.collection("shortlinks").findOne({ owner: token.username, key });
+        const existing = await db.collection("shortlinks").findOne({ owner: username, key });
         if (existing) {
             return new Response(JSON.stringify({ error: "New key already exists" }), { status: 409 });
         }
@@ -138,7 +136,7 @@ export async function PUT(req) {
     }
 
     const result = await db.collection("shortlinks").updateOne(
-        { owner: token.username, key: originalKey },
+        { owner: username, key: originalKey },
         { $set: updateFields }
     );
 
@@ -150,23 +148,24 @@ export async function PUT(req) {
 }
 
 export async function DELETE(req) {
-    const token = await getToken({ req, secret: NEXTAUTH_SECRET });
-    if (!token || !token.username) {
-        return new Response(
-            JSON.stringify({ error: "Unauthorized", token, headers: Object.fromEntries(req.headers) }),
-            { status: 401 }
-        );
+    const session = await auth();
+
+    if (!session || !session.user || !session.user.username) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
     const { key } = await req.json();
+
     if (!key) {
         return new Response(JSON.stringify({ error: "Missing key" }), { status: 400 });
     }
 
+    const username = session.user.username;
+
     const client = await clientPromise;
     const db = client.db();
 
-    const shortlink = await db.collection("shortlinks").findOne({ owner: token.username, key });
+    const shortlink = await db.collection("shortlinks").findOne({ owner: username, key });
 
     if (!shortlink) {
         return new Response(JSON.stringify({ error: "Shortlink not found" }), { status: 404 });
