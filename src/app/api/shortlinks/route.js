@@ -24,8 +24,6 @@ export async function GET(req) {
 export async function POST(req) {
     const token = await getToken({ req, secret: NEXTAUTH_SECRET });
 
-    console.log(token)
-
     if (!token || !token.username) {
         return new Response(JSON.stringify({ error: "Unauthorized", token, headers: Object.fromEntries(req.headers) }), { status: 401 });
     }

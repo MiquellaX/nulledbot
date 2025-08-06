@@ -95,7 +95,9 @@ export default function ShortlinkTab({
 								allowedIsp: "",
 							});
 
-							const res2 = await fetch("/api/shortlinks");
+							const res2 = await fetch("/api/shortlinks", {
+								credentials: "include",
+							});
 							const data2 = await res2.json();
 							setShortlinks(Array.isArray(data2) ? data2 : []);
 
@@ -467,7 +469,9 @@ export default function ShortlinkTab({
 								})
 							}
 							onUpdate={async () => {
-								const res = await fetch("/api/shortlinks");
+								const res = await fetch("/api/shortlinks", {
+									credentials: "include",
+								});
 								const data = await res.json();
 								setShortlinks(Array.isArray(data) ? data : []);
 							}}

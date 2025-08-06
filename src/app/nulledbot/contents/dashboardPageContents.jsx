@@ -50,7 +50,9 @@ export default function DashboardPageContents() {
 	useEffect(() => {
 		async function fetchShortlinks() {
 			if (tab === "shortlink" && status === "authenticated") {
-				const res = await fetch("/api/shortlinks");
+				const res = await fetch("/api/shortlinks", {
+					credentials: "include",
+				});
 				const data = await res.json();
 				setShortlinks(Array.isArray(data) ? data : []);
 			}
