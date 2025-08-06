@@ -57,7 +57,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
     return (
-        <html lang="en">
+        <html lang="en" data-scroll-behavior="smooth">
             <body className="antialiased" style={{ fontFamily: "var(--font-nulledbot)" }}>
                 <Toaster richColors position="top-right" />
                 {children}
