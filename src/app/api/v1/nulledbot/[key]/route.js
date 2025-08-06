@@ -31,16 +31,6 @@ function handleBlock(reason, statusCode) {
 }
 
 export async function GET(req, context) {
-    function getClientIp(req) {
-        return (
-            req.headers["x-vercel-forwarded-for"] ||
-            req.headers["x-real-ip"] ||
-            req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
-            req.connection?.remoteAddress ||
-            "0.0.0.0"
-        );
-    }
-    const ip = getClientIp(req);
     const params = await context.params;
     const key = params.key;
 
@@ -58,6 +48,15 @@ export async function GET(req, context) {
     const matchedBotSignature = suspiciousUserAgents.find(keyword =>
         uaLower.includes(keyword)
     );
+
+    let ip =
+        req.headers.get("x-real-ip")?.trim() ||
+        req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        "8.8.8.8";
+
+    if (ip === "::1" || ip === "127.0.0.1") {
+        ip = "8.8.8.8";
+    }
 
     if (!rateLimit(ip)) {
         return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
