@@ -12,6 +12,7 @@ async function getSubscriptionType(username) {
 
 export async function GET(req) {
     const token = await getToken({ req, secret: NEXTAUTH_SECRET });
+    console.log("[DEBUG] TOKEN: ", token);
     if (!token || !token.username) {
         return new Response(JSON.stringify({ error: "Unauthorized", token, headers: Object.fromEntries(req.headers) }), { status: 401 });
     }

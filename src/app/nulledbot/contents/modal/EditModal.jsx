@@ -36,6 +36,7 @@ export default function EditModal({
 					(async () => {
 						const res = await fetch("/api/shortlinks", {
 							method: "PUT",
+							credentials: "include",
 							headers: { "Content-Type": "application/json" },
 							body: JSON.stringify(formData),
 						});
