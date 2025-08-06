@@ -54,6 +54,8 @@ export async function GET(req, context) {
         ip = "8.8.8.8";
     }
 
+    console.log("All headers:", Object.fromEntries(req.headers.entries()));
+
     if (!rateLimit(ip)) {
         return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
