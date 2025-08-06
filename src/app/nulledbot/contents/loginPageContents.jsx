@@ -39,17 +39,13 @@ export default function LoginPageContents() {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setLoading(true);
-
 		const res = await signIn("credentials", {
-			redirect: true, // Triggers redirect
+			redirect: true,
 			username,
 			key,
-			callbackUrl: "/nulledbot/dashboard", // Redirect after successful login
+			callbackUrl: "/nulledbot/dashboard",
 		});
-
 		setLoading(false);
-
-		// Handle response here if needed
 	};
 
 	return (

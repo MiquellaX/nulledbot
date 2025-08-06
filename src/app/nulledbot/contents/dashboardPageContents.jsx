@@ -110,6 +110,7 @@ export default function DashboardPageContents() {
 						(async () => {
 							await fetch("/api/karma", {
 								method: "PATCH",
+								credentials: "include",
 								headers: { "Content-Type": "application/json" },
 								body: JSON.stringify({
 									username: session?.user?.username,

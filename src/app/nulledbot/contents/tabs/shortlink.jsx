@@ -75,6 +75,7 @@ export default function ShortlinkTab({
 						(async () => {
 							const res = await fetch("/api/shortlinks", {
 								method: "POST",
+								credentials: "include",
 								headers: { "Content-Type": "application/json" },
 								body: JSON.stringify(form),
 							});
@@ -384,6 +385,7 @@ export default function ShortlinkTab({
 															(async () => {
 																const res = await fetch("/api/shortlinks", {
 																	method: "DELETE",
+																	credentials: "include",
 																	headers: {
 																		"Content-Type": "application/json",
 																	},
