@@ -172,7 +172,7 @@ function KarmaAdminPageDashboardContents() {
 					<h2 className="text-2xl font-semibold mb-4 text-red-700">
 						List of registered user
 					</h2>
-					<ul className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+					<ul className="grid grid-cols-1 gap-5">
 						{users.map((user, idx) => (
 							<motion.li
 								initial={{ opacity: 0, y: 20 }}
