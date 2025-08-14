@@ -50,7 +50,7 @@ export async function GET(req, context) {
     );
 
     let ip =
-        req.headers.get("x-visitor-real-api")?.trim() ||
+        req.headers.get("x-visitor-ip-asli")?.trim() ||
         req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
         "8.8.8.8";
 

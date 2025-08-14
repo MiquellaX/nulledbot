@@ -14,38 +14,43 @@ export default function LoginPageContents() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
+	const errorMessages = {
+		CredentialsSignin: "Invalid username or key. Please try again.",
+		error_expired: "Your subscription has expired. Please renew.",
+		error_waiting: "Your account is pending approval.",
+		error_denied: "Your account has been denied.",
+		profile_not_found: "Profile not found. Please contact support.",
+	};
+
 	useEffect(() => {
-		const errorParam = searchParams.get("error");
-		if (errorParam) {
-			switch (errorParam) {
-				case "InvalidCredentials":
-					setError("Invalid username or key. Please try again.");
-					break;
-				case "SubscriptionExpired":
-					setError("Your subscription has expired. Please renew.");
-					break;
-				case "AccountWaiting":
-					setError("Your account is pending approval.");
-					break;
-				case "AccountDenied":
-					setError("Your account has been denied access.");
-					break;
-				default:
-					setError("Login failed. Please try again.");
-			}
+		const errorFromUrl = searchParams.get("error");
+		if (errorFromUrl) {
+			setError(errorMessages[errorFromUrl] || errorFromUrl);
+
+			const url = new URL(window.location.href);
+			url.searchParams.delete("error");
+			window.history.replaceState(null, "", url.toString());
 		}
 	}, [searchParams]);
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setLoading(true);
-		const res = await signIn("credentials", {
-			redirect: true,
+		setError("");
+
+		const response = await signIn("credentials", {
 			username,
 			key,
-			callbackUrl: "/nulledbot/dashboard",
+			redirect: false,
 		});
+
 		setLoading(false);
+
+		if (response?.error) {
+			setError(errorMessages[response.error] || response.error);
+			return;
+		}
+		router.push("/nulledbot/dashboard");
 	};
 
 	return (
@@ -68,6 +73,7 @@ export default function LoginPageContents() {
 								<RogIconHome className="w-10 mb-5 cursor-pointer" />
 							</p>
 						</div>
+
 						<input
 							type="text"
 							placeholder="Username"
@@ -75,7 +81,9 @@ export default function LoginPageContents() {
 							onChange={(e) => setUsername(e.target.value)}
 							className="w-full mb-4 p-2 border rounded"
 							required
+							autoComplete="username"
 						/>
+
 						<input
 							type="password"
 							placeholder="Key"
@@ -83,8 +91,11 @@ export default function LoginPageContents() {
 							onChange={(e) => setKey(e.target.value)}
 							className="w-full mb-4 p-2 border rounded"
 							required
+							autoComplete="current-password"
 						/>
+
 						{error && <div className="text-red-700 mb-2">{error}</div>}
+
 						<button
 							type="submit"
 							disabled={loading}
@@ -93,31 +104,34 @@ export default function LoginPageContents() {
 							}`}
 						>
 							{loading ? (
-								<svg className="w-6 h-6" viewBox="0 0 24 24">
-									<circle cx="4" cy="12" r="3">
+								<svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+									<circle cx="4" cy="12" r="3" fill="currentColor">
 										<animate
 											id="spinner_jObz"
 											begin="0;spinner_vwSQ.end-0.25s"
 											attributeName="r"
 											dur="0.75s"
 											values="3;.2;3"
+											repeatCount="indefinite"
 										/>
 									</circle>
-									<circle cx="12" cy="12" r="3">
+									<circle cx="12" cy="12" r="3" fill="currentColor">
 										<animate
 											begin="spinner_jObz.end-0.6s"
 											attributeName="r"
 											dur="0.75s"
 											values="3;.2;3"
+											repeatCount="indefinite"
 										/>
 									</circle>
-									<circle cx="20" cy="12" r="3">
+									<circle cx="20" cy="12" r="3" fill="currentColor">
 										<animate
 											id="spinner_vwSQ"
 											begin="spinner_jObz.end-0.45s"
 											attributeName="r"
 											dur="0.75s"
 											values="3;.2;3"
+											repeatCount="indefinite"
 										/>
 									</circle>
 								</svg>
@@ -125,6 +139,7 @@ export default function LoginPageContents() {
 								"Login"
 							)}
 						</button>
+
 						<div className="mt-4 text-center flex gap-2 cursor-pointer">
 							<span>Don't have an account?</span>
 							<p
