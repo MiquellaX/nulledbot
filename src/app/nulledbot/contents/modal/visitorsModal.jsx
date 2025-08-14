@@ -167,7 +167,7 @@ export default function VisitorsModal({ data, shortlinkKey, onClose }) {
 						{visitors.map((v, i) => (
 							<div
 								key={i}
-								className="bg-gray-900 rounded-lg shadow-md p-4 hover:bg-gray-800 transition-colors"
+								className="ring-1 rounded-lg shadow-md p-4 hover:bg-white/10 transition-colors cursor-default"
 							>
 								<div className="flex flex-col xl:flex-row flex-wrap justify-between text-xs md:text-sm">
 									<div className="flex flex-col mb-2">

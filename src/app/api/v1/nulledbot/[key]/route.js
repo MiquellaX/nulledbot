@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { UAParser } from "ua-parser-js";
 
 const rateLimitStore = new Map();
-const RATE_LIMIT = 3;
+const RATE_LIMIT = 5;
 const WINDOW_SIZE = 60 * 1000;
 
 function rateLimit(ip) {
@@ -70,6 +70,8 @@ export async function GET(req, context) {
 
     const userProfile = await db.collection("user_profiles").findOne({ apiKey });
     if (!userProfile) return NextResponse.json({ error: "Invalid API key" }, { status: 403 });
+
+    if (userProfile.status === 'expired') return NextResponse.json({ error: "Subscription Expired." }, { status: 404 });
 
     if (!key) return NextResponse.json({ error: "Missing key" }, { status: 400 });
 

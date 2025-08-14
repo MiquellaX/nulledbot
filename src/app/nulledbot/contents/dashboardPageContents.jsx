@@ -241,7 +241,7 @@ export default function DashboardPageContents() {
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
 					transition={{ duration: 0.3 }}
-					className={`flex items-center justify-between py-5`}
+					className={`flex flex-col md:flex-row lg:flex-row xl:flex-row items-center justify-between py-5`}
 				>
 					<RogIcon
 						setNavbar={setNavbar}
@@ -286,7 +286,7 @@ export default function DashboardPageContents() {
 						) : (
 							timeLeft && (
 								<p
-									className={`ml-5 text-sm font-bold ${
+									className={`ml-5 text-xs md:text-sm lg:text-sm xl:text-sm font-bold ${
 										timeLeft.days > 0
 											? "text-green-700 animate-pulse"
 											: "text-red-700 animate-pulse"

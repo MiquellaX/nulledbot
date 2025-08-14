@@ -50,7 +50,7 @@ export default function ShortlinkTab({
 			transition={{ duration: 0.5 }}
 			className="rounded-lg border bg-black border-white shadow p-6"
 		>
-			<div className="flex justify-between border-b mb-10 border-white/20">
+			<div className="flex flex-col md:flex-row lg:flex-row xl:flex-row justify-between border-b mb-10 border-white/20">
 				<h2 className="text-xl font-bold mb-4">
 					Nulledbot Shortlink Management
 				</h2>
@@ -279,155 +279,165 @@ export default function ShortlinkTab({
 			</form>
 
 			{shortlinks.length > 0 ? (
-				<table
-					className={`bg-black w-full border ${
-						shortlinks.length > 0 ? "" : "hidden"
-					}`}
-				>
-					<thead>
-						<tr className="text-white text-sm">
-							<th className="p-2 border w-[100px]">INFO</th>
-							<th className="p-2 border">URL REDIRECTION</th>
-							<th className="p-2 border">KEY</th>
-							<th className="p-2 border">STATUS</th>
-							<th className="p-2 border">ACTIONS</th>
-						</tr>
-					</thead>
-					<tbody>
-						{shortlinks.map((sl) => (
-							<tr key={sl.key}>
-								<td className="px-2 text-xs align-middle py-2 border-r border-b">
-									<div className="space-y-1 w-[180px]">
-										<p className="overflow-hidden whitespace-nowrap text-ellipsis">
-											OWNED BY :{" "}
-											<span className="text-amber-500 font-bold">
-												{sl.owner.toUpperCase()}
-											</span>
-										</p>
-										<p className="flex gap-1 overflow-hidden whitespace-nowrap text-ellipsis">
-											CREATED AT :
-											<span className="text-green-600 font-bold">
-												{new Date(sl.createdAt).toLocaleTimeString("en-US", {
+				<div className="grid grid-cols-1 gap-4">
+					{shortlinks.map((sl) => (
+						<div
+							key={sl.key}
+							className="ring-1 rounded-lg shadow-md p-4 hover:bg-white/10 transition-colors cursor-default"
+						>
+							<div className="flex flex-col md:flex-row lg:flex-row xl:flex-row flex-wrap justify-between text-xs md:text-sm gap-y-2">
+								<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 text-xs md:text-sm lg:text-sm xl:text-sm">
+									<span className="text-white">Owner</span>
+									<span className="text-amber-400 font-semibold">
+										{sl.owner.toUpperCase()}
+									</span>
+								</div>
+
+								<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 text-xs md:text-sm lg:text-sm xl:text-sm">
+									<span className="text-white">Created</span>
+									<span className="text-green-400 font-semibold">
+										{new Date(sl.createdAt).toLocaleTimeString("en-US", {
+											hour: "2-digit",
+											minute: "2-digit",
+											hour12: true,
+											timeZone: "Asia/Jakarta",
+										})}
+									</span>
+								</div>
+
+								<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 text-xs md:text-sm lg:text-sm xl:text-sm">
+									<span className="text-white">Updated</span>
+									<span
+										className={
+											sl.updatedAt === sl.createdAt
+												? "text-red-700 font-semibold"
+												: "text-amber-500 font-semibold"
+										}
+									>
+										{sl.updatedAt === sl.createdAt
+											? "NO UPDATE YET"
+											: new Date(sl.updatedAt).toLocaleTimeString("en-US", {
 													hour: "2-digit",
 													minute: "2-digit",
 													hour12: true,
 													timeZone: "Asia/Jakarta",
-												})}
-											</span>
-										</p>
-										{sl.updatedAt === sl.createdAt ? (
-											<p className="flex gap-1 overflow-hidden whitespace-nowrap text-ellipsis">
-												UPDATED AT :
-												<span className="text-red-800 font-bold">
-													NO UPDATE YET
-												</span>
-											</p>
-										) : (
-											<p className="flex gap-1 overflow-hidden whitespace-nowrap text-ellipsis">
-												UPDATED AT :
-												<span className="text-blue-600">
-													{new Date(sl.updatedAt).toLocaleTimeString("en-US", {
-														hour: "2-digit",
-														minute: "2-digit",
-														hour12: true,
-														timeZone: "Asia/Jakarta",
-													})}
-												</span>
-											</p>
-										)}
+											  })}
+									</span>
+								</div>
+
+								<div className="flex flex-col text-xs md:text-sm lg:text-sm xl:text-sm">
+									<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 w-full break-words">
+										<span className="text-white">URL</span>
+										<span className="text-blue-400 font-semibold">
+											{sl.url}
+										</span>
 									</div>
-								</td>
-								<td className="px-2 text-sm font-bold text-center border-r border-b">
-									{sl.url}
-								</td>
-								<td className="p-2 text-sm font-bold text-center border-r border-b">
-									{sl.key}
-								</td>
-								<td className="text-center cursor-default border-r border-b">
+								</div>
+
+								<div className="flex flex-col text-xs md:text-sm lg:text-sm xl:text-sm">
+									<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2">
+										<span className="text-white">Key</span>
+										<span className="text-cyan-400 font-semibold">
+											{sl.key}
+										</span>
+									</div>
+								</div>
+
+								<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 text-xs md:text-sm lg:text-sm xl:text-sm">
+									<span className="text-white">Status</span>
 									<span
-										className={`p-2 px-4 rounded-lg font-bold text-sm ${
-											sl.status == "ACTIVE" ? "text-green-600" : "text-red-500"
+										className={`font-bold rounded-full px-1 py-1 w-max text-xs ${
+											sl.status === "ACTIVE"
+												? "text-green-600 ring-1 ring-green-500 bg-green-600/10"
+												: "text-red-700 ring-1 ring-red-500 bg-red-600/10"
 										}`}
 									>
 										{sl.status}
 									</span>
-								</td>
-								<td className="border-b">
-									<div className="flex items-center justify-center gap-4">
-										<button
-											onClick={() =>
-												setEditModal({
-													open: true,
-													data: { ...sl, originalKey: sl.key },
-													loading: false,
-													error: "",
-												})
-											}
-											title="Edit Shortlink"
-										>
-											<FaCogs className="setting-icon" />
-										</button>
-										<button
-											onClick={() =>
-												setVisitorsModal({
-													open: true,
-													data: { ...sl, originalKey: sl.key },
-												})
-											}
-											title="View Visitors"
-										>
-											<FaEye className="view-icon" />
-										</button>
-										<button
-											onClick={() => {
-												confirmToast({
-													message: `Delete shortlink: "${sl.url}"?`,
-													onConfirm: async () => {
-														toast.promise(
-															(async () => {
-																const res = await fetch("/api/shortlinks", {
-																	method: "DELETE",
-																	credentials: "include",
-																	headers: {
-																		"Content-Type": "application/json",
-																	},
-																	body: JSON.stringify({ key: sl.key }),
-																});
-																const data = await res.json();
-																if (!res.ok || !data.success) {
-																	throw new Error(
-																		data.error || "Failed to delete"
+								</div>
+
+								<div className="flex flex-col text-xs md:text-sm lg:text-sm xl:text-sm">
+									<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 w-full">
+										<span className="text-white">Actions</span>
+										<div className="flex gap-4 mt-1">
+											<button
+												onClick={() =>
+													setEditModal({
+														open: true,
+														data: { ...sl, originalKey: sl.key },
+														loading: false,
+														error: "",
+													})
+												}
+												title="Edit Shortlink"
+												className="text-yellow-400 hover:text-yellow-300 transition"
+											>
+												<FaCogs className="setting-icon" />
+											</button>
+											<button
+												onClick={() =>
+													setVisitorsModal({
+														open: true,
+														data: { ...sl, originalKey: sl.key },
+													})
+												}
+												title="View Visitors"
+												className="text-blue-400 hover:text-blue-300 transition"
+											>
+												<FaEye className="view-icon" />
+											</button>
+											<button
+												onClick={() => {
+													confirmToast({
+														message: `Delete shortlink: "${sl.url}"?`,
+														onConfirm: async () => {
+															toast.promise(
+																(async () => {
+																	const res = await fetch("/api/shortlinks", {
+																		method: "DELETE",
+																		credentials: "include",
+																		headers: {
+																			"Content-Type": "application/json",
+																		},
+																		body: JSON.stringify({ key: sl.key }),
+																	});
+																	const data = await res.json();
+																	if (!res.ok || !data.success) {
+																		throw new Error(
+																			data.error || "Failed to delete"
+																		);
+																	}
+																	setShortlinks(
+																		shortlinks.filter((s) => s.key !== sl.key)
 																	);
+																	return "Deleted";
+																})(),
+																{
+																	loading: "Deleting...",
+																	success: `Shortlink "${sl.url}" deleted.`,
+																	error: (err) => `Failed: ${err.message}`,
 																}
-																setShortlinks(
-																	shortlinks.filter((s) => s.key !== sl.key)
-																);
-																return "Deleted";
-															})(),
-															{
-																loading: "Deleting...",
-																success: `Shortlink "${sl.url}" deleted.`,
-																error: (err) => `Failed: ${err.message}`,
-															}
-														);
-													},
-													onCancel: () => {
-														toast("Deletion cancelled.");
-													},
-												});
-											}}
-											title="Delete Shortlink"
-										>
-											<FaTrash className="delete-icon" />
-										</button>
+															);
+														},
+														onCancel: () => {
+															toast("Deletion cancelled.");
+														},
+													});
+												}}
+												title="Delete Shortlink"
+												className="text-red-400 hover:text-red-300 transition"
+											>
+												<FaTrash className="delete-icon" />
+											</button>
+										</div>
 									</div>
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
+								</div>
+							</div>
+						</div>
+					))}
+				</div>
 			) : (
-				<div className="text-center">NO SHORTLINKS YET</div>
+				<div className="text-center text-white mt-4">NO SHORTLINKS YET</div>
 			)}
 
 			<AnimatePresence>

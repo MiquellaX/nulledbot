@@ -95,7 +95,7 @@ export default function HomePageContents() {
 					className="flex justify-center items-center relative"
 				>
 					<motion.div
-						animate={{ x: hasScrolled ? -20 : 0 }}
+						animate={{ x: hasScrolled ? -10 : 0 }}
 						transition={{ type: "spring", stiffness: 120, damping: 20 }}
 					>
 						<button
@@ -115,7 +115,7 @@ export default function HomePageContents() {
 								: { opacity: 0, width: 0 }
 						}
 						transition={{ duration: 0.4 }}
-						className="flex gap-5 overflow-hidden whitespace-nowrap text-xs font-semibold"
+						className="flex gap-2 md:gap-5 lg:gap-5 xl:gap-5 overflow-hidden whitespace-nowrap text-xs font-semibold"
 						style={{ pointerEvents: hasScrolled ? "auto" : "none" }}
 					>
 						<button
@@ -152,13 +152,26 @@ export default function HomePageContents() {
 						</button>
 						<button
 							onClick={() => router.push("/nulledbot/login")}
-							className="cursor-pointer hover:text-red-700 transition duration-300"
+							className="hidden md:flex lg:flex xl:flex cursor-pointer hover:text-red-700 transition duration-300"
 						>
 							LOGIN
 						</button>
 					</motion.div>
 				</motion.div>
 			</header>
+
+			<div
+				className={`flex md:hidden lg:hidden xl:hidden bg-black fixed top-11 z-50 w-full transition duration-300 text-xs font-semibold mx-auto justify-center items-center ${
+					hasScrolled ? "" : "opacity-0"
+				}`}
+			>
+				<button
+					onClick={() => router.push("/nulledbot/login")}
+					className={`cursor-pointer hover:text-red-700 transition duration-300 w-max py-1`}
+				>
+					LOGIN
+				</button>
+			</div>
 
 			{/* UTAMA */}
 			<section
