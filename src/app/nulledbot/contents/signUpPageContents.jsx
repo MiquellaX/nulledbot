@@ -65,6 +65,7 @@ export default function SignupPageContents() {
 							onChange={(e) => setUsername(e.target.value)}
 							className="w-full mb-4 p-2 border rounded"
 							required
+							autoComplete="off"
 						/>
 						<input
 							type="password"
@@ -73,6 +74,7 @@ export default function SignupPageContents() {
 							onChange={(e) => setKey(e.target.value)}
 							className="w-full mb-4 p-2 border rounded"
 							required
+							autoComplete="off"
 						/>
 						{error && <div className="text-red-500 mb-2">{error}</div>}
 						{success && <div className="text-green-500 mb-2">{success}</div>}

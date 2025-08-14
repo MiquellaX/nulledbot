@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { RogIconHome } from "@/app/nulledbot/icons/nulledbotIcons";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function HomePageContents() {
 	const router = useRouter();
@@ -13,7 +14,23 @@ export default function HomePageContents() {
 	const moreInfoRef = useRef(null);
 	const homeRef = useRef(null);
 	const faqRef = useRef(null);
+	const [screenWidth, setScreenWidth] = useState(0);
 
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			setScreenWidth(window.innerWidth);
+
+			const handleResize = () => {
+				setScreenWidth(window.innerWidth);
+			};
+
+			window.addEventListener("resize", handleResize);
+
+			return () => {
+				window.removeEventListener("resize", handleResize);
+			};
+		}
+	}, []);
 	const plans = [
 		{
 			name: "Free",
@@ -21,6 +38,11 @@ export default function HomePageContents() {
 			priceMonthly: "$0",
 			priceYearly: "$0",
 			features: ["Basic bot filtering", "Community support", "Limited stats"],
+			urls: {
+				weekly: "/nulledbot/signup",
+				monthly: "/nulledbot/signup",
+				yearly: "/nulledbot/signup",
+			},
 		},
 		{
 			name: "Pro",
@@ -32,6 +54,11 @@ export default function HomePageContents() {
 				"Geo/IP filtering",
 				"Analytics dashboard",
 			],
+			urls: {
+				weekly: "https://app.sandbox.midtrans.com/payment-links/pro-weekly",
+				monthly: "https://app.sandbox.midtrans.com/payment-links/pro-monthly",
+				yearly: "https://app.sandbox.midtrans.com/payment-links/pro-yearly",
+			},
 		},
 		{
 			name: "Enterprise",
@@ -39,6 +66,14 @@ export default function HomePageContents() {
 			priceMonthly: "$99",
 			priceYearly: "$999",
 			features: ["Custom rules", "Priority support", "Unlimited shortlinks"],
+			urls: {
+				weekly:
+					"https://app.sandbox.midtrans.com/payment-links/enterprise-weekly",
+				monthly:
+					"https://app.sandbox.midtrans.com/payment-links/enterprise-monthly",
+				yearly:
+					"https://app.sandbox.midtrans.com/payment-links/enterprise-yearly",
+			},
 		},
 	];
 
@@ -83,6 +118,90 @@ export default function HomePageContents() {
 		window.addEventListener("scroll", handleScroll);
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
+
+	const handlePayment = async (plan) => {
+		const toastPosition = screenWidth < 1148 ? "bottom-center" : "top-right";
+		const usdAmount = parseInt(
+			plan[
+				`price${billing.charAt(0).toUpperCase() + billing.slice(1)}`
+			].replace("$", "")
+		);
+		const conversionRate = 15000;
+		const amount = usdAmount * conversionRate;
+
+		const createTransactionAndPay = async () => {
+			const res = await fetch("/api/midtrans", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					amount,
+					items: [
+						{
+							id: `${plan.name.toLowerCase()}-plan`,
+							price: amount,
+							quantity: 1,
+							name: `${plan.name} Plan - ${billing}`,
+						},
+					],
+					customer: {
+						first_name: "Nulledbot",
+						email: "nulledbot@dev.shop",
+					},
+				}),
+			});
+
+			const data = await res.json();
+
+			if (!res.ok || !data.token) {
+				throw new Error("Failed to get Snap token");
+			}
+
+			return new Promise((resolve, reject) => {
+				window.snap.pay(data.token, {
+					onSuccess: function (result) {
+						toast.success("Payment successful!");
+						resolve(result);
+						router.push("/nulledbot/signup");
+					},
+					onPending: function (result) {
+						toast.info("Payment is pending.");
+						resolve(result);
+					},
+					onError: function (result) {
+						if (result.error_code === "INSUFFICIENT_FUNDS") {
+							reject(new Error("INSUFFICIENT_FUNDS"));
+						} else if (result.error_code === "INVALID_CARD") {
+							reject(new Error("INVALID_CARD"));
+						} else {
+							reject(new Error("PAYMENT_FAILED"));
+						}
+					},
+					onClose: function () {
+						reject(new Error("USER_CLOSED_PAYMENT"));
+					},
+				});
+			});
+		};
+
+		await toast.promise(createTransactionAndPay(), {
+			loading: "Processing payment...",
+			success: "Payment Finished.",
+			error: (err) => {
+				if (err.message === "USER_CLOSED_PAYMENT")
+					return "Payment was cancelled.";
+				if (err.message === "INSUFFICIENT_FUNDS")
+					return "Insufficient funds. Please check your balance.";
+				if (err.message === "INVALID_CARD")
+					return "Invalid card. Please verify your card details.";
+				if (err.message === "PAYMENT_FAILED")
+					return "Payment failed. Please try again.";
+				return "There was an error processing your payment. Please try again.";
+			},
+			position: toastPosition,
+		});
+	};
 
 	return (
 		<div className="cursor-default">
@@ -248,13 +367,11 @@ export default function HomePageContents() {
 								<button
 									key={option}
 									onClick={() => setBilling(option)}
-									className={`
-                                        px-5 py-2 text-xs font-semibold transition-all duration-200
-                                        ${
-																					isActive
-																						? "bg-red-700 text-black hover:text-black cursor-default"
-																						: "text-black hover:text-red-700 cursor-pointer transition duration-300"
-																				}
+									className={`px-5 py-2 text-xs font-semibold transition-all duration-200 ${
+										isActive
+											? "bg-red-700 text-black hover:text-black cursor-default"
+											: "text-black hover:text-red-700 cursor-pointer transition duration-300"
+									}
                                         ${index === 0 ? "rounded-l-full" : ""}
                                         ${index === 2 ? "rounded-r-full" : ""}
                                         ${index === 1 ? "rounded-none" : ""}
@@ -287,7 +404,13 @@ export default function HomePageContents() {
 								))}
 							</ul>
 							<button
-								onClick={() => router.push("/nulledbot/signup")}
+								onClick={() => {
+									if (plan.name === "Free") {
+										router.push("/nulledbot/signup");
+										return;
+									}
+									handlePayment(plan);
+								}}
 								className="bg-red-700 py-2 px-5 rounded-lg cursor-pointer hover:ring-2 hover:ring-green-600 transition duration-300"
 							>
 								Choose {plan.name}

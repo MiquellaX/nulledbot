@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Toaster } from "sonner";
+import Script from "next/script";
 
 export const metadata = {
     title: `NulledBot #HOME`,
@@ -61,6 +62,11 @@ export default function RootLayout({ children }) {
             <body className="antialiased" style={{ fontFamily: "var(--font-nulledbot)" }}>
                 <Toaster richColors position="top-right" />
                 {children}
+                <Script
+                    src="https://app.sandbox.midtrans.com/snap/snap.js"
+                    data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+                    strategy="afterInteractive"
+                />
             </body>
         </html>
     );
