@@ -46,7 +46,7 @@ export default function HomePageContents() {
 		},
 		{
 			name: "Pro",
-			priceWeekly: "$9",
+			priceWeekly: "$10",
 			priceMonthly: "$29",
 			priceYearly: "$299",
 			features: [
