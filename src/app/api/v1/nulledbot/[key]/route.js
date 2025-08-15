@@ -216,5 +216,23 @@ export async function GET(req, context) {
         return handleBlock(blockReason, shortlink.statusCode);
     }
 
-    return NextResponse.redirect(shortlink.url);
+    let finalUrl = null;
+
+    if (shortlink.primaryUrlStatus === "LIVE") {
+        finalUrl = shortlink.url;
+    } else if (
+        shortlink.secondaryUrl &&
+        shortlink.secondaryUrlStatus === "LIVE"
+    ) {
+        finalUrl = shortlink.secondaryUrl;
+    }
+
+    if (!finalUrl) {
+        return NextResponse.json(
+            { error: "No valid destination found" },
+            { status: 502 }
+        );
+    }
+
+    return NextResponse.redirect(finalUrl);
 }

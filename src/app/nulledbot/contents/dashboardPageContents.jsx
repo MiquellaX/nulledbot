@@ -30,6 +30,7 @@ export default function DashboardPageContents() {
 	const [shortlinks, setShortlinks] = useState([]);
 	const [form, setForm] = useState({
 		url: "",
+		secondaryUrl: "",
 		key: "",
 		statusCode: "",
 		allowedDevice: "",

@@ -108,22 +108,49 @@ export default function ShortlinkTab({
 		}
 	};
 
-	const checkAndUpdateStatus = async (url, key) => {
+	const checkAndUpdateStatus = async (url, key, secondaryUrl) => {
 		setLoadingKeys((prev) => ({ ...prev, [key]: true }));
 
 		const now = Date.now();
 		const cache = loadStatusCache();
-		const urlCache = cache[key]?.[url];
 
-		const isFresh = urlCache && now - urlCache.timestamp < CACHE_DURATION;
-		if (isFresh) {
+		const urlCache = cache[key]?.[url];
+		const isFreshPrimary =
+			urlCache && now - urlCache.timestamp < CACHE_DURATION;
+		if (isFreshPrimary) {
 			setLiveStatuses((prev) => ({ ...prev, [key]: urlCache.status }));
 			setLoadingKeys((prev) => ({ ...prev, [key]: false }));
 			return;
 		}
 
+		if (secondaryUrl) {
+			const secondaryCache = cache[key]?.[secondaryUrl];
+			const isFreshSecondary =
+				secondaryCache && now - secondaryCache.timestamp < CACHE_DURATION;
+
+			if (isFreshSecondary) {
+				setLiveStatuses((prev) => ({ ...prev, [key]: secondaryCache.status }));
+				setLoadingKeys((prev) => ({ ...prev, [key]: false }));
+				return;
+			}
+		}
+
 		const isSafe = await checkUrlSafety(url);
 		if (!isSafe) {
+			if (secondaryUrl) {
+				const safeSecondary = await checkUrlSafety(secondaryUrl);
+				if (safeSecondary) {
+					const reachableSecondary = await checkUrlReachability(secondaryUrl);
+					const status = reachableSecondary ? "LIVE" : "DEAD";
+					cache[key] = cache[key] || {};
+					cache[key][secondaryUrl] = { status, timestamp: now };
+					saveStatusCache(cache);
+					setLiveStatuses((prev) => ({ ...prev, [key]: status }));
+					setLoadingKeys((prev) => ({ ...prev, [key]: false }));
+					return;
+				}
+			}
+
 			const status = "RED FLAG";
 			cache[key] = cache[key] || {};
 			cache[key][url] = { status, timestamp: now };
@@ -134,8 +161,21 @@ export default function ShortlinkTab({
 		}
 
 		const isReachable = await checkUrlReachability(url);
-		const status = isReachable ? "LIVE" : "DEAD";
+		if (!isReachable && secondaryUrl) {
+			const isSafeSecondary = await checkUrlSafety(secondaryUrl);
+			if (isSafeSecondary) {
+				const isReachableSecondary = await checkUrlReachability(secondaryUrl);
+				const status = isReachableSecondary ? "LIVE" : "DEAD";
+				cache[key] = cache[key] || {};
+				cache[key][secondaryUrl] = { status, timestamp: now };
+				saveStatusCache(cache);
+				setLiveStatuses((prev) => ({ ...prev, [key]: status }));
+				setLoadingKeys((prev) => ({ ...prev, [key]: false }));
+				return;
+			}
+		}
 
+		const status = isReachable ? "LIVE" : "DEAD";
 		cache[key] = cache[key] || {};
 		cache[key][url] = { status, timestamp: now };
 		saveStatusCache(cache);
@@ -144,7 +184,7 @@ export default function ShortlinkTab({
 		setLoadingKeys((prev) => ({ ...prev, [key]: false }));
 	};
 
-	const manualCheckUrl = async (url, key) => {
+	const manualCheckUrl = async (url, key, secondaryUrl) => {
 		setLoadingKeys((prev) => ({ ...prev, [key]: true }));
 
 		const toastId = toast.loading(`Checking "${url}"...`);
@@ -152,6 +192,24 @@ export default function ShortlinkTab({
 		try {
 			const isSafe = await checkUrlSafety(url);
 			if (!isSafe) {
+				if (secondaryUrl) {
+					const safeSecondary = await checkUrlSafety(secondaryUrl);
+					if (safeSecondary) {
+						const reachableSecondary = await checkUrlReachability(secondaryUrl);
+						const status = reachableSecondary ? "LIVE" : "DEAD";
+						setLiveStatuses((prev) => ({ ...prev, [key]: status }));
+
+						if (status.includes("LIVE")) {
+							toast.success(`"${secondaryUrl}" is LIVE`, {
+								id: toastId,
+							});
+						} else {
+							toast.warning(`"${secondaryUrl}" is DEAD`, { id: toastId });
+						}
+						return;
+					}
+				}
+
 				const status = "RED FLAG";
 				setLiveStatuses((prev) => ({ ...prev, [key]: status }));
 				toast.error(`"${url}" is RF`, { id: toastId });
@@ -159,15 +217,31 @@ export default function ShortlinkTab({
 			}
 
 			const isReachable = await checkUrlReachability(url);
+			if (!isReachable && secondaryUrl) {
+				const isSafeSecondary = await checkUrlSafety(secondaryUrl);
+				if (isSafeSecondary) {
+					const isReachableSecondary = await checkUrlReachability(secondaryUrl);
+					const status = isReachableSecondary ? "LIVE" : "DEAD";
+					setLiveStatuses((prev) => ({ ...prev, [key]: status }));
+
+					if (status.includes("LIVE")) {
+						toast.success(`"${secondaryUrl}" is LIVE`, {
+							id: toastId,
+						});
+					} else {
+						toast.warning(`"${secondaryUrl}" is DEAD`, { id: toastId });
+					}
+					return;
+				}
+			}
+
 			const status = isReachable ? "LIVE" : "DEAD";
 			setLiveStatuses((prev) => ({ ...prev, [key]: status }));
 
 			if (status === "LIVE") {
 				toast.success(`"${url}" is LIVE`, { id: toastId });
 			} else {
-				toast.warning(`"${url}" is DEAD`, {
-					id: toastId,
-				});
+				toast.warning(`"${url}" is DEAD`, { id: toastId });
 			}
 		} catch (err) {
 			toast.error(`Error checking "${url}"`, { id: toastId });
@@ -180,7 +254,7 @@ export default function ShortlinkTab({
 		const interval = setInterval(() => {
 			shortlinks.forEach((sl) => {
 				if (!loadingKeys[sl.key]) {
-					checkAndUpdateStatus(sl.url, sl.key);
+					checkAndUpdateStatus(sl.url, sl.key, sl.secondaryUrl);
 				}
 			});
 		}, 5000);
@@ -234,6 +308,7 @@ export default function ShortlinkTab({
 
 							setForm({
 								url: "",
+								secondaryUrl: "",
 								key: "",
 								statusCode: "",
 								allowedDevice: "",
@@ -266,6 +341,13 @@ export default function ShortlinkTab({
 						name: "url",
 						type: "url",
 						placeholder: "https://domain.com/?path",
+						required: true,
+					},
+					{
+						label: "Secondary Site URL",
+						name: "secondaryUrl",
+						type: "url",
+						placeholder: "https://backupdomain.com/?path",
 						required: true,
 					},
 					{
@@ -476,7 +558,7 @@ export default function ShortlinkTab({
 									<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 w-full break-words">
 										<span className="text-white">URL</span>
 										<span className="text-blue-400 font-semibold">
-											{sl.url}
+											{liveStatuses[sl.key] ? sl.secondaryUrl : sl.url}
 										</span>
 									</div>
 								</div>
@@ -563,13 +645,14 @@ export default function ShortlinkTab({
 												<FaCogs className="setting-icon" />
 											</button>
 											<button
-												onClick={() => manualCheckUrl(sl.url, sl.key)}
+												onClick={() =>
+													manualCheckUrl(sl.url, sl.key, sl.secondaryUrl)
+												}
 												title="Check URL"
 												className="text-yellow-400 hover:text-yellow-300 transition"
 											>
 												<FaReact className="check-icon" />
 											</button>
-
 											<button
 												onClick={() => {
 													localStorage.removeItem("statusCache");

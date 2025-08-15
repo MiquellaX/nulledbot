@@ -1,5 +1,6 @@
 import clientPromise from "../../../lib/mongodb";
 import { auth } from "@/auth";
+import { checkUrlStatus } from "../../../lib/checkUrl";
 
 async function getSubscriptionType(username) {
     const client = await clientPromise;
@@ -29,7 +30,7 @@ export async function POST(req) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
-    const { url, key, statusCode, allowedDevice, connectionType, allowedCountry, allowedIsp } = await req.json();
+    const { url, secondaryUrl, key, statusCode, allowedDevice, connectionType, allowedCountry, allowedIsp } = await req.json();
 
     if (!url || !key) {
         return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400 });
@@ -56,11 +57,17 @@ export async function POST(req) {
         return new Response(JSON.stringify({ error: "Key already exists" }), { status: 409 });
     }
 
+    const primaryUrlStatus = await checkUrlStatus(url);
+    const secondaryUrlStatus = secondaryUrl ? await checkUrlStatus(secondaryUrl) : null;
+
     const doc = {
         owner: username,
         url,
+        secondaryUrl: secondaryUrl || null,
         key,
         status: "ACTIVE",
+        primaryUrlStatus,
+        secondaryUrlStatus,
         statusCode,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -88,6 +95,7 @@ export async function PUT(req) {
         originalKey,
         key,
         url,
+        secondaryUrl,
         statusCode,
         allowedDevice,
         connectionType,
@@ -115,6 +123,7 @@ export async function PUT(req) {
     const updateFields = {
         key,
         url,
+        secondaryUrl: secondaryUrl || null,
         statusCode,
         updatedAt: new Date(),
     };
