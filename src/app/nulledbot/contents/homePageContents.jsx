@@ -1,10 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { RogIconHome } from "@/app/nulledbot/icons/nulledbotIcons";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import CustomerInfoModal from "@/app/nulledbot/contents/modal/customerDetails";
 
 export default function HomePageContents() {
 	const router = useRouter();
@@ -15,6 +16,8 @@ export default function HomePageContents() {
 	const homeRef = useRef(null);
 	const faqRef = useRef(null);
 	const [screenWidth, setScreenWidth] = useState(0);
+	const [showModal, setShowModal] = useState(false);
+	const [selectedPlan, setSelectedPlan] = useState(null);
 
 	useEffect(() => {
 		if (typeof window !== "undefined") {
@@ -119,7 +122,7 @@ export default function HomePageContents() {
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
 
-	const handlePayment = async (plan) => {
+	const handlePayment = async (plan, customerName, customerEmail) => {
 		const toastPosition = screenWidth < 1148 ? "bottom-center" : "top-right";
 		const usdAmount = parseInt(
 			plan[
@@ -132,9 +135,7 @@ export default function HomePageContents() {
 		const createTransactionAndPay = async () => {
 			const res = await fetch("/api/midtrans", {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
+				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					amount,
 					items: [
@@ -146,14 +147,13 @@ export default function HomePageContents() {
 						},
 					],
 					customer: {
-						first_name: "Nulledbot",
-						email: "nulledbot@dev.shop",
+						first_name: customerName,
+						email: customerEmail,
 					},
 				}),
 			});
 
 			const data = await res.json();
-
 			if (!res.ok || !data.token) {
 				throw new Error("Failed to get Snap token");
 			}
@@ -409,7 +409,8 @@ export default function HomePageContents() {
 										router.push("/nulledbot/signup");
 										return;
 									}
-									handlePayment(plan);
+									setSelectedPlan(plan);
+									setShowModal(true);
 								}}
 								className="bg-red-700 py-2 px-5 rounded-lg cursor-pointer hover:ring-2 hover:ring-green-600 transition duration-300"
 							>
@@ -417,6 +418,13 @@ export default function HomePageContents() {
 							</button>
 						</motion.div>
 					))}
+					<CustomerInfoModal
+						isOpen={showModal}
+						onClose={() => setShowModal(false)}
+						onSubmit={({ name, email }) => {
+							handlePayment(selectedPlan, name, email);
+						}}
+					/>
 				</div>
 			</section>
 
