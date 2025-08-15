@@ -138,6 +138,33 @@ export async function PUT(req) {
     return new Response(JSON.stringify({ success: true }), { status: 200 });
 }
 
+export async function PATCH(req) {
+    const session = await auth();
+    if (!session?.user?.username) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+    }
+
+    const { key, newStatus } = await req.json();
+
+    if (!key || !newStatus) {
+        return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400 });
+    }
+
+    const client = await clientPromise;
+    const db = client.db();
+
+    const result = await db.collection("shortlinks").updateOne(
+        { owner: session.user.username, key },
+        { $set: { status: newStatus, updatedAt: new Date() } }
+    );
+
+    if (result.matchedCount === 0) {
+        return new Response(JSON.stringify({ error: "Shortlink not found" }), { status: 404 });
+    }
+
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+}
+
 export async function DELETE(req) {
     const session = await auth();
 

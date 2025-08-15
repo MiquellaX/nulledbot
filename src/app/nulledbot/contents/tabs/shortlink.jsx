@@ -1,21 +1,26 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-	FaAccessibleIcon,
-	FaAngry,
-	FaAppStore,
-	FaCheck,
-	FaCogs,
-	FaEye,
-	FaReact,
-	FaTrafficLight,
-	FaTrash,
-	FaUserSecret,
-} from "react-icons/fa";
+import { FaCogs, FaEye, FaReact, FaTrash, FaCode } from "react-icons/fa";
 import EditModal from "@/app/nulledbot/contents/modal/EditModal";
 import VisitorsModal from "@/app/nulledbot/contents/modal/visitorsModal";
 import { confirmToast } from "@/lib/confirmToast";
 import { toast } from "sonner";
+import { useState, useEffect } from "react";
+
+const CACHE_KEY = "statusCache";
+const CACHE_DURATION = 10 * 60 * 1000;
+
+const loadStatusCache = () => {
+	try {
+		return JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
+	} catch {
+		return {};
+	}
+};
+
+const saveStatusCache = (cache) => {
+	localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+};
 
 export default function ShortlinkTab({
 	form,
@@ -32,6 +37,8 @@ export default function ShortlinkTab({
 	setEditModal,
 	subscriptionType,
 }) {
+	const [liveStatuses, setLiveStatuses] = useState({});
+	const [loadingKeys, setLoadingKeys] = useState({});
 	const handleDownload = async () => {
 		try {
 			const res = await fetch("/api/download");
@@ -58,23 +65,20 @@ export default function ShortlinkTab({
 			const controller = new AbortController();
 			const timeout = setTimeout(() => controller.abort(), 5000);
 
-			const response = await fetch(url, {
+			await fetch(url, {
 				method: "HEAD",
 				mode: "no-cors",
 				signal: controller.signal,
 			});
-
 			clearTimeout(timeout);
-
 			return true;
-		} catch (error) {
+		} catch {
 			return false;
 		}
 	};
 
 	const checkUrlSafety = async (urlToCheck) => {
 		const apiKey = process.env.NEXT_PUBLIC_GOOGLE_SAFE_API;
-
 		const body = {
 			client: {
 				clientId: "NulledBot",
@@ -93,37 +97,91 @@ export default function ShortlinkTab({
 				`https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${apiKey}`,
 				{
 					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
+					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify(body),
 				}
 			);
-
 			const data = await response.json();
-
 			return !(data && data.matches);
-		} catch (error) {
+		} catch {
 			return true;
 		}
 	};
 
-	const handleCheck = async (url) => {
-		toast.info("Checking URL status...");
+	const checkAndUpdateStatus = async (url, key) => {
+		setLoadingKeys((prev) => ({ ...prev, [key]: true }));
+
+		const now = Date.now();
+		const cache = loadStatusCache();
+		const urlCache = cache[key]?.[url];
+
+		const isFresh = urlCache && now - urlCache.timestamp < CACHE_DURATION;
+		if (isFresh) {
+			setLiveStatuses((prev) => ({ ...prev, [key]: urlCache.status }));
+			setLoadingKeys((prev) => ({ ...prev, [key]: false }));
+			return;
+		}
 
 		const isSafe = await checkUrlSafety(url);
 		if (!isSafe) {
-			toast.error("URL is Red Flagged.");
-			return;
-		}
-		const isReachable = await checkUrlReachability(url);
-		if (!isReachable) {
-			toast.warning("URL is DEAD.");
+			const status = "RED FLAG";
+			cache[key] = cache[key] || {};
+			cache[key][url] = { status, timestamp: now };
+			saveStatusCache(cache);
+			setLiveStatuses((prev) => ({ ...prev, [key]: status }));
+			setLoadingKeys((prev) => ({ ...prev, [key]: false }));
 			return;
 		}
 
-		toast.success("URL is SAFE and LIVE.");
+		const isReachable = await checkUrlReachability(url);
+		const status = isReachable ? "LIVE" : "DEAD";
+
+		cache[key] = cache[key] || {};
+		cache[key][url] = { status, timestamp: now };
+		saveStatusCache(cache);
+
+		setLiveStatuses((prev) => ({ ...prev, [key]: status }));
+		setLoadingKeys((prev) => ({ ...prev, [key]: false }));
 	};
+
+	const manualCheckUrl = async (url, key) => {
+		setLoadingKeys((prev) => ({ ...prev, [key]: true }));
+
+		const isSafe = await checkUrlSafety(url);
+		if (!isSafe) {
+			const status = "RED FLAG";
+
+			setLiveStatuses((prev) => ({ ...prev, [key]: status }));
+			setLoadingKeys((prev) => ({ ...prev, [key]: false }));
+
+			toast.error(`"${url}" is RF`);
+			return;
+		}
+
+		const isReachable = await checkUrlReachability(url);
+		const status = isReachable ? "LIVE" : "DEAD";
+
+		setLiveStatuses((prev) => ({ ...prev, [key]: status }));
+		setLoadingKeys((prev) => ({ ...prev, [key]: false }));
+
+		if (status === "LIVE") {
+			toast.success(`"${url}" is LIVE`);
+		} else {
+			toast.warning(`"${url}" is DEAD`);
+		}
+	};
+
+	useEffect(() => {
+		const interval = setInterval(() => {
+			shortlinks.forEach((sl) => {
+				if (!loadingKeys[sl.key]) {
+					checkAndUpdateStatus(sl.url, sl.key);
+				}
+			});
+		}, 5000);
+
+		return () => clearInterval(interval);
+	}, [shortlinks, loadingKeys]);
 
 	return (
 		<motion.div
@@ -430,13 +488,54 @@ export default function ShortlinkTab({
 								<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 text-xs md:text-sm lg:text-sm xl:text-sm">
 									<span className="text-white">Status</span>
 									<span
-										className={`font-bold rounded-full px-1 py-1 w-max text-xs ${
-											sl.status === "ACTIVE"
+										className={`font-bold rounded-full px-2 py-1 w-max h-max text-xs ${
+											liveStatuses[sl.key] === "LIVE"
 												? "text-green-600 ring-1 ring-green-500 bg-green-600/10"
-												: "text-red-700 ring-1 ring-red-500 bg-red-600/10"
+												: liveStatuses[sl.key] === "DEAD"
+												? "text-yellow-600 ring-1 ring-yellow-500 bg-yellow-600/10"
+												: liveStatuses[sl.key] === "RED FLAG"
+												? "text-red-600 ring-1 ring-red-500 bg-red-600/10"
+												: "text-gray-400 ring-1 ring-gray-500 bg-gray-600/10"
 										}`}
 									>
-										{sl.status}
+										{loadingKeys[sl.key] ? (
+											<svg
+												className="w-[33px] h-4 fill-amber-50"
+												viewBox="0 0 24 24"
+												xmlns="http://www.w3.org/2000/svg"
+											>
+												<circle cx="4" cy="12" r="3">
+													<animate
+														id="spinner_jObz"
+														begin="0;spinner_vwSQ.end-0.25s"
+														attributeName="r"
+														dur="0.75s"
+														values="3;.2;3"
+													/>
+												</circle>
+												<circle cx="12" cy="12" r="3">
+													<animate
+														begin="spinner_jObz.end-0.6s"
+														attributeName="r"
+														dur="0.75s"
+														values="3;.2;3"
+													/>
+												</circle>
+												<circle cx="20" cy="12" r="3">
+													<animate
+														id="spinner_vwSQ"
+														begin="spinner_jObz.end-0.45s"
+														attributeName="r"
+														dur="0.75s"
+														values="3;.2;3"
+													/>
+												</circle>
+											</svg>
+										) : liveStatuses[sl.key] === "RED FLAG" ? (
+											"RF"
+										) : (
+											liveStatuses[sl.key] || sl.status
+										)}
 									</span>
 								</div>
 
@@ -459,12 +558,21 @@ export default function ShortlinkTab({
 												<FaCogs className="setting-icon" />
 											</button>
 											<button
-												onClick={() => handleCheck(sl.url)}
+												onClick={() => manualCheckUrl(sl.url, sl.key)}
 												title="Check URL"
 												className="text-yellow-400 hover:text-yellow-300 transition"
 											>
 												<FaReact className="check-icon" />
 											</button>
+
+											<button
+												onClick={() => localStorage.removeItem("statusCache")}
+												title="Clear Status Cache"
+												className="text-yellow-400 hover:text-yellow-300 transition"
+											>
+												<FaCode className="cache-icon" />
+											</button>
+
 											<button
 												onClick={() =>
 													setVisitorsModal({
