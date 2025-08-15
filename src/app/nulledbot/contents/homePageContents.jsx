@@ -122,7 +122,12 @@ export default function HomePageContents() {
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
 
-	const handlePayment = async (plan, customerName, customerEmail) => {
+	const handlePayment = async (
+		plan,
+		customerName,
+		customerEmail,
+		customerKey
+	) => {
 		const toastPosition = screenWidth < 1148 ? "bottom-center" : "top-right";
 		const usdAmount = parseInt(
 			plan[
@@ -160,10 +165,48 @@ export default function HomePageContents() {
 
 			return new Promise((resolve, reject) => {
 				window.snap.pay(data.token, {
-					onSuccess: function (result) {
+					onSuccess: async function (result) {
 						toast.success("Payment successful!");
+
+						try {
+							const payload = {
+								username: customerEmail,
+								key: customerKey,
+								planName: plan.name,
+								billing: billing,
+							};
+
+							let res = await fetch("/api/signup-paid", {
+								method: "POST",
+								headers: { "Content-Type": "application/json" },
+								body: JSON.stringify(payload),
+							});
+
+							if (res.status === 409) {
+								res = await fetch("/api/signup-paid", {
+									method: "PATCH",
+									headers: { "Content-Type": "application/json" },
+									body: JSON.stringify(payload),
+								});
+							}
+
+							const data = await res.json();
+
+							if (!data.success) {
+								toast.error(`Account process failed: ${data.error}`);
+								return;
+							}
+
+							router.push(
+								`/nulledbot/login?user=${encodeURIComponent(customerEmail)}`
+							);
+						} catch (err) {
+							toast.error(
+								"Something went wrong while processing your account."
+							);
+						}
+
 						resolve(result);
-						router.push("/nulledbot/signup");
 					},
 					onPending: function (result) {
 						toast.info("Payment is pending.");
@@ -421,8 +464,8 @@ export default function HomePageContents() {
 					<CustomerInfoModal
 						isOpen={showModal}
 						onClose={() => setShowModal(false)}
-						onSubmit={({ name, email }) => {
-							handlePayment(selectedPlan, name, email);
+						onSubmit={({ name, email, key }) => {
+							handlePayment(selectedPlan, name, email, key);
 						}}
 					/>
 				</div>

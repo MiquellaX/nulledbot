@@ -5,10 +5,11 @@ import { FaTimes } from "react-icons/fa";
 export default function CustomerInfoModal({ isOpen, onClose, onSubmit }) {
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
+	const [key, setKey] = useState("");
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
-		onSubmit({ name, email });
+		onSubmit({ name, email, key });
 		onClose();
 	};
 
@@ -31,7 +32,7 @@ export default function CustomerInfoModal({ isOpen, onClose, onSubmit }) {
 						transition={{ duration: 0.3 }}
 					>
 						<div className="flex justify-between">
-							<h2 className="text-xl font-bold mb-4">Buyer Info</h2>
+							<h2 className="text-xl font-bold mb-4">Buyer SignUp</h2>
 							<button type="button" onClick={onClose} className="mb-10">
 								<FaTimes className="delete-icon" />
 							</button>
@@ -52,6 +53,15 @@ export default function CustomerInfoModal({ isOpen, onClose, onSubmit }) {
 								onChange={(e) => setEmail(e.target.value)}
 								className="w-full border rounded-lg p-2"
 								required
+							/>
+							<input
+								type="password"
+								placeholder="Account Key"
+								value={key}
+								onChange={(e) => setKey(e.target.value)}
+								className="w-full border rounded-lg p-2"
+								required
+								autoComplete="off"
 							/>
 							<div className="flex justify-end gap-2">
 								<button type="submit" className={`tombol hover:ring-green-600`}>

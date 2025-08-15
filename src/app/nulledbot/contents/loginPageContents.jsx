@@ -13,6 +13,13 @@ export default function LoginPageContents() {
 	const [error, setError] = useState("");
 	const router = useRouter();
 	const searchParams = useSearchParams();
+	const emailFromPayment = searchParams.get("user") || "";
+
+	useEffect(() => {
+		if (emailFromPayment) {
+			setUsername(emailFromPayment);
+		}
+	}, [emailFromPayment]);
 
 	const errorMessages = {
 		CredentialsSignin: "Invalid username or key. Please try again.",
@@ -82,6 +89,7 @@ export default function LoginPageContents() {
 							className="w-full mb-4 p-2 border rounded"
 							required
 							autoComplete="username"
+							readOnly={!!emailFromPayment}
 						/>
 
 						<input
