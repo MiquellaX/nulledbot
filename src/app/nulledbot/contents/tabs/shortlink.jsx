@@ -187,7 +187,8 @@ export default function ShortlinkTab({
 	const manualCheckUrl = async (url, key, secondaryUrl) => {
 		setLoadingKeys((prev) => ({ ...prev, [key]: true }));
 
-		const toastId = toast.loading(`Checking "${url}"...`);
+		const activeUrl = getActiveUrl(url, secondaryUrl, liveStatuses, key);
+		const toastId = toast.loading(`Checking URL...`);
 
 		try {
 			const isSafe = await checkUrlSafety(url);
@@ -248,6 +249,15 @@ export default function ShortlinkTab({
 		} finally {
 			setLoadingKeys((prev) => ({ ...prev, [key]: false }));
 		}
+	};
+
+	const getActiveUrl = (url, secondaryUrl, liveStatuses, key) => {
+		const status = liveStatuses[key];
+
+		if (status === "DEAD" || status === "RED FLAG") {
+			return secondaryUrl || url;
+		}
+		return url;
 	};
 
 	useEffect(() => {
