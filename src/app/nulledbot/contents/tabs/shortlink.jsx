@@ -568,7 +568,10 @@ export default function ShortlinkTab({
 									<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 w-full break-words">
 										<span className="text-white">URL</span>
 										<span className="text-blue-400 font-semibold">
-											{liveStatuses[sl.key] ? sl.secondaryUrl : sl.url}
+											{sl.primaryUrlStatus === "DEAD" ||
+											sl.primaryUrlStatus === "RED FLAG"
+												? sl.secondaryUrl || sl.url
+												: sl.url}
 										</span>
 									</div>
 								</div>

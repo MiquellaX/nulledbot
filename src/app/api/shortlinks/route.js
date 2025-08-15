@@ -107,6 +107,9 @@ export async function PUT(req) {
         return new Response(JSON.stringify({ error: "Missing originalKey, key, or url" }), { status: 400 });
     }
 
+    const primaryUrlStatus = await checkUrlStatus(url);
+    const secondaryUrlStatus = secondaryUrl ? await checkUrlStatus(secondaryUrl) : null;
+
     const username = session.user.username;
     const subscriptionType = await getSubscriptionType(username);
 
@@ -124,6 +127,8 @@ export async function PUT(req) {
         key,
         url,
         secondaryUrl: secondaryUrl || null,
+        primaryUrlStatus,
+        secondaryUrlStatus,
         statusCode,
         updatedAt: new Date(),
     };
