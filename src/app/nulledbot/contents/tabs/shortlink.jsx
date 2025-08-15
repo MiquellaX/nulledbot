@@ -1,6 +1,17 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { FaCogs, FaEye, FaTrash } from "react-icons/fa";
+import {
+	FaAccessibleIcon,
+	FaAngry,
+	FaAppStore,
+	FaCheck,
+	FaCogs,
+	FaEye,
+	FaReact,
+	FaTrafficLight,
+	FaTrash,
+	FaUserSecret,
+} from "react-icons/fa";
 import EditModal from "@/app/nulledbot/contents/modal/EditModal";
 import VisitorsModal from "@/app/nulledbot/contents/modal/visitorsModal";
 import { confirmToast } from "@/lib/confirmToast";
@@ -41,6 +52,79 @@ export default function ShortlinkTab({
 		}
 	};
 	const subType = subscriptionType;
+
+	const checkUrlReachability = async (url) => {
+		try {
+			const controller = new AbortController();
+			const timeout = setTimeout(() => controller.abort(), 5000);
+
+			const response = await fetch(url, {
+				method: "HEAD",
+				mode: "no-cors",
+				signal: controller.signal,
+			});
+
+			clearTimeout(timeout);
+
+			return true;
+		} catch (error) {
+			return false;
+		}
+	};
+
+	const checkUrlSafety = async (urlToCheck) => {
+		const apiKey = process.env.NEXT_PUBLIC_GOOGLE_SAFE_API;
+
+		const body = {
+			client: {
+				clientId: "NulledBot",
+				clientVersion: "1.0",
+			},
+			threatInfo: {
+				threatTypes: ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE"],
+				platformTypes: ["ANY_PLATFORM"],
+				threatEntryTypes: ["URL"],
+				threatEntries: [{ url: urlToCheck }],
+			},
+		};
+
+		try {
+			const response = await fetch(
+				`https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${apiKey}`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(body),
+				}
+			);
+
+			const data = await response.json();
+
+			return !(data && data.matches);
+		} catch (error) {
+			return true;
+		}
+	};
+
+	const handleCheck = async (url) => {
+		toast.info("Checking URL status...");
+
+		const isSafe = await checkUrlSafety(url);
+		if (!isSafe) {
+			toast.error("URL is Red Flagged.");
+			return;
+		}
+		const isReachable = await checkUrlReachability(url);
+		if (!isReachable) {
+			toast.warning("URL is DEAD.");
+			return;
+		}
+
+		toast.success("URL is SAFE and LIVE.");
+	};
+
 	return (
 		<motion.div
 			key="shortlink"
@@ -373,6 +457,13 @@ export default function ShortlinkTab({
 												className="text-yellow-400 hover:text-yellow-300 transition"
 											>
 												<FaCogs className="setting-icon" />
+											</button>
+											<button
+												onClick={() => handleCheck(sl.url)}
+												title="Check URL"
+												className="text-yellow-400 hover:text-yellow-300 transition"
+											>
+												<FaReact className="check-icon" />
 											</button>
 											<button
 												onClick={() =>

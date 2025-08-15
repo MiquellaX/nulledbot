@@ -62,3 +62,7 @@ html {
 .view-icon {
 	@apply w-4 h-4 xl:w-5 xl:h-5 fill-green-600 hover:fill-amber-500 hover:ring-2 hover:ring-green-600 hover:rounded-full hover:p-1 transition-all duration-300 cursor-pointer;
 }
+
+.check-icon {
+	@apply w-4 h-4 xl:w-5 xl:h-5 fill-fuchsia-600 hover:fill-amber-500 hover:ring-2 hover:ring-fuchsia-600 hover:rounded-full hover:p-1 transition-all duration-300 cursor-pointer;
+}
