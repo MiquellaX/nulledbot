@@ -147,27 +147,32 @@ export default function ShortlinkTab({
 	const manualCheckUrl = async (url, key) => {
 		setLoadingKeys((prev) => ({ ...prev, [key]: true }));
 
-		const isSafe = await checkUrlSafety(url);
-		if (!isSafe) {
-			const status = "RED FLAG";
+		const toastId = toast.loading(`Checking "${url}"...`);
 
+		try {
+			const isSafe = await checkUrlSafety(url);
+			if (!isSafe) {
+				const status = "RED FLAG";
+				setLiveStatuses((prev) => ({ ...prev, [key]: status }));
+				toast.error(`"${url}" is RF`, { id: toastId });
+				return;
+			}
+
+			const isReachable = await checkUrlReachability(url);
+			const status = isReachable ? "LIVE" : "DEAD";
 			setLiveStatuses((prev) => ({ ...prev, [key]: status }));
+
+			if (status === "LIVE") {
+				toast.success(`"${url}" is LIVE`, { id: toastId });
+			} else {
+				toast.warning(`"${url}" is DEAD`, {
+					id: toastId,
+				});
+			}
+		} catch (err) {
+			toast.error(`Error checking "${url}"`, { id: toastId });
+		} finally {
 			setLoadingKeys((prev) => ({ ...prev, [key]: false }));
-
-			toast.error(`"${url}" is RF`);
-			return;
-		}
-
-		const isReachable = await checkUrlReachability(url);
-		const status = isReachable ? "LIVE" : "DEAD";
-
-		setLiveStatuses((prev) => ({ ...prev, [key]: status }));
-		setLoadingKeys((prev) => ({ ...prev, [key]: false }));
-
-		if (status === "LIVE") {
-			toast.success(`"${url}" is LIVE`);
-		} else {
-			toast.warning(`"${url}" is DEAD`);
 		}
 	};
 
