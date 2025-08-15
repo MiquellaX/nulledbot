@@ -539,7 +539,7 @@ export default function ShortlinkTab({
 										) : liveStatuses[sl.key] === "RED FLAG" ? (
 											"RF"
 										) : (
-											liveStatuses[sl.key] || sl.status
+											liveStatuses[sl.key] || "WAIT"
 										)}
 									</span>
 								</div>
@@ -571,7 +571,10 @@ export default function ShortlinkTab({
 											</button>
 
 											<button
-												onClick={() => localStorage.removeItem("statusCache")}
+												onClick={() => {
+													localStorage.removeItem("statusCache");
+													toast.success("Status Cache Cleared.");
+												}}
 												title="Clear Status Cache"
 												className="text-yellow-400 hover:text-yellow-300 transition"
 											>

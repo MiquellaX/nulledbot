@@ -22,14 +22,14 @@ export default function CustomerInfoModal({ isOpen, onClose, onSubmit }) {
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
-					transition={{ duration: 0.3 }}
+					transition={{ duration: 0.2 }}
 				>
 					<motion.div
 						className="bg-[#0a0a0a] ring-1 ring-white rounded-2xl shadow-xl p-6 w-full max-w-md text-white"
 						initial={{ scale: 0.9, opacity: 0 }}
 						animate={{ scale: 1, opacity: 1 }}
 						exit={{ scale: 0.9, opacity: 0 }}
-						transition={{ duration: 0.3 }}
+						transition={{ duration: 0.2 }}
 					>
 						<div className="flex justify-between">
 							<h2 className="text-xl font-bold mb-4">Buyer SignUp</h2>

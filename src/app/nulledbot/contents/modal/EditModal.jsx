@@ -76,7 +76,9 @@ export default function EditModal({
 				exit={{ y: -50, opacity: 0 }}
 				className="bg-black border border-white rounded-lg text-white w-full max-w-4xl p-6"
 			>
-				<h3 className="text-xl font-bold mb-6">Edit Shortlink : {data?.url}</h3>
+				<h3 className="text-xl font-bold mb-6">
+					Edit Shortlink : <span className="text-blue-400">{data?.url}</span>
+				</h3>
 
 				<form onSubmit={handleSubmit}>
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">

@@ -253,7 +253,7 @@ export default function HomePageContents() {
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
-					transition={{ duration: 0.5, delay: 0.5 }}
+					transition={{ duration: 0.2, delay: 0.2 }}
 					className="flex justify-center items-center relative"
 				>
 					<motion.div
@@ -276,7 +276,7 @@ export default function HomePageContents() {
 								? { opacity: 1, width: "auto" }
 								: { opacity: 0, width: 0 }
 						}
-						transition={{ duration: 0.4 }}
+						transition={{ duration: 0.2 }}
 						className="flex gap-2 md:gap-5 lg:gap-5 xl:gap-5 overflow-hidden whitespace-nowrap text-xs font-semibold"
 						style={{ pointerEvents: hasScrolled ? "auto" : "none" }}
 					>
@@ -344,7 +344,7 @@ export default function HomePageContents() {
 					className="text-4xl font-bold mb-6"
 					initial={{ y: 40, opacity: 0 }}
 					animate={{ y: 0, opacity: 1 }}
-					transition={{ duration: 0.6 }}
+					transition={{ duration: 0.2 }}
 				>
 					Nulled<span className="text-red-700">Bot</span> — Stop Bots Before
 					They Click
@@ -386,7 +386,7 @@ export default function HomePageContents() {
 							className="p-6 rounded-xl bg-white/90 text-black"
 							initial={{ opacity: 0, y: 30 }}
 							whileInView={{ opacity: 1, y: 0 }}
-							transition={{ delay: index * 0.2, duration: 0.5 }}
+							transition={{ delay: index * 0.2, duration: 0.2 }}
 							viewport={{ once: false }}
 						>
 							<h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
@@ -434,7 +434,7 @@ export default function HomePageContents() {
 							className="bg-white/90 text-black rounded-xl p-6 space-y-4"
 							initial={{ opacity: 0, y: 40 }}
 							whileInView={{ opacity: 1, y: 0 }}
-							transition={{ delay: index * 0.2, duration: 0.5 }}
+							transition={{ delay: index * 0.2, duration: 0.2 }}
 							viewport={{ once: false }}
 						>
 							<h3 className="text-2xl font-semibold">{plan.name}</h3>
@@ -521,7 +521,7 @@ export default function HomePageContents() {
 							key={i}
 							initial={{ opacity: 0, y: 30 }}
 							whileInView={{ opacity: 1, y: 0 }}
-							transition={{ delay: i * 0.2, duration: 0.5 }}
+							transition={{ delay: i * 0.2, duration: 0.2 }}
 							viewport={{ once: false }}
 						>
 							<h3 className="text-xl font-semibold mb-2">{item.title}</h3>
@@ -551,7 +551,7 @@ export default function HomePageContents() {
 							key={i}
 							initial={{ opacity: 0, y: 20 }}
 							whileInView={{ opacity: 1, y: 0 }}
-							transition={{ delay: i * 0.1, duration: 0.5 }}
+							transition={{ delay: i * 0.1, duration: 0.2 }}
 							viewport={{ once: false }}
 							className="border-b border-gray-300 pb-4"
 						>

@@ -233,14 +233,14 @@ export default function DashboardPageContents() {
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				exit={{ opacity: 0 }}
-				transition={{ duration: 0.4 }}
+				transition={{ duration: 0.2 }}
 				className="flex-1 px-5"
 			>
 				<motion.div
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
-					transition={{ duration: 0.3 }}
+					transition={{ duration: 0.2 }}
 					className={`flex flex-col md:flex-row lg:flex-row xl:flex-row items-center justify-between py-5`}
 				>
 					<RogIcon
@@ -312,7 +312,7 @@ export default function DashboardPageContents() {
 						initial={{ opacity: 0, y: 10 }}
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: -10 }}
-						transition={{ duration: 0.4 }}
+						transition={{ duration: 0.2 }}
 					>
 						{renderTabComponent()}
 					</motion.div>
