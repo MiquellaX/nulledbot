@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 
 const CACHE_KEY = "statusCache";
-const CACHE_DURATION = 1 * 60 * 1000;
+const CACHE_DURATION = 3 * 60 * 1000;
 
 const loadStatusCache = () => {
 	try {
@@ -308,18 +308,31 @@ export default function ShortlinkTab({
 
 	useEffect(() => {
 		const interval = setInterval(() => {
+			const cache = loadStatusCache();
+			const now = Date.now();
+
 			shortlinks.forEach((sl) => {
-				if (
-					!loadingKeys[sl.key] &&
-					(!liveStatuses[sl.key] || liveStatuses[sl.key].status !== "LIVE")
-				) {
-					checkAndUpdateStatus(sl.url, sl.key, sl.secondaryUrl);
+				const key = sl.key;
+				const primaryCache = cache[key]?.[sl.url];
+				const secondaryCache = sl.secondaryUrl
+					? cache[key]?.[sl.secondaryUrl]
+					: null;
+
+				const isPrimaryExpired =
+					!primaryCache || now - primaryCache.timestamp >= CACHE_DURATION;
+
+				const isSecondaryExpired =
+					sl.secondaryUrl &&
+					(!secondaryCache || now - secondaryCache.timestamp >= CACHE_DURATION);
+
+				if (!loadingKeys[key] && (isPrimaryExpired || isSecondaryExpired)) {
+					checkAndUpdateStatus(sl.url, key, sl.secondaryUrl);
 				}
 			});
 		}, 5000);
 
 		return () => clearInterval(interval);
-	}, [shortlinks, loadingKeys, liveStatuses]);
+	}, [shortlinks, loadingKeys]);
 
 	return (
 		<motion.div
