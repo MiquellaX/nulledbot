@@ -10,6 +10,9 @@ export const metadata = {
         'antibot', 'security', 'ip filtering', 'bot protection', 'proxy detection',
         'vpn detection', 'web security', 'NulledBot', 'traffic filtering', 'threat mitigation'
     ],
+    verification: {
+        google: "rfQf_mmYNUbYylSGa9v7iD9h4zcXYXUhbcew-4i05Z4",
+    },
     openGraph: {
         siteName: 'NulledBot',
         title: `NulledBot | Advanced Web Security & Bot Protection`,
@@ -60,7 +63,6 @@ export const metadata = {
 export default function RootLayout({ children }) {
     return (
         <html lang="en" data-scroll-behavior="smooth">
-            <Head><meta name="google-site-verification" content="rfQf_mmYNUbYylSGa9v7iD9h4zcXYXUhbcew-4i05Z4" /></Head>
             <body className="antialiased" style={{ fontFamily: "var(--font-nulledbot)" }}>
                 <Toaster richColors position="top-right" />
                 {children}
