@@ -1,33 +1,21 @@
 import clientPromise from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 import { UAParser } from "ua-parser-js";
+import { rateLimit } from "@/lib/nulledBotRateLimiter";
 
-const rateLimitStore = new Map();
-const RATE_LIMIT = 5;
-const WINDOW_SIZE = 60 * 1000;
+const botRedirectUrls = [
+    "https://httpbin.org/status/403",
+    "https://www.google.com/robots.txt"
+];
 
-function rateLimit(ip) {
-    const now = Date.now();
-    const entry = rateLimitStore.get(ip) || { count: 0, timestamp: now };
-
-    if (now - entry.timestamp < WINDOW_SIZE) {
-        if (entry.count >= RATE_LIMIT) return false;
-        entry.count++;
-    } else {
-        entry.count = 1;
-        entry.timestamp = now;
-    }
-
-    rateLimitStore.set(ip, entry);
-    return true;
-}
+const randomRedirect = botRedirectUrls[Math.floor(Math.random() * botRedirectUrls.length)];
 
 function handleBlock(reason, statusCode) {
     const code = Number(statusCode);
     if ([403, 404].includes(code)) {
         return NextResponse.json({ error: reason }, { status: code });
     }
-    return NextResponse.redirect("https://example.com");
+    return NextResponse.redirect(randomRedirect);
 }
 
 export async function GET(req, context) {
@@ -58,7 +46,7 @@ export async function GET(req, context) {
         ip = "8.8.8.8";
     }
 
-    if (!rateLimit(ip)) {
+    if (!(await rateLimit(ip))) {
         return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
 
@@ -78,32 +66,67 @@ export async function GET(req, context) {
     const shortlink = await db.collection("shortlinks").findOne({ key });
     if (!shortlink) return NextResponse.json({ error: "Shortlink not found" }, { status: 404 });
 
-    let ipData = {};
-    try {
-        const url = `https://ipdetective.p.rapidapi.com/ip/${ip}?info=true`;
-        const options = {
-            method: 'GET',
-            headers: {
-                'x-rapidapi-key': process.env.X_API_KEY,
-                'x-rapidapi-host': 'ipdetective.p.rapidapi.com'
-            }
-        };
-        const response = await fetch(url, options);
-        ipData = await response.json();
-    } catch (error) {
-        console.error("IPDetective API error:", error);
-        return NextResponse.json({ error: "Unable to verify IP location" }, { status: 500 });
-    }
+    const fetchWithTimeout = (url, options = {}, timeout = 4000) => {
+        return Promise.race([
+            fetch(url, options),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Request timed out")), timeout)
+            )
+        ]);
+    };
 
+    let ipData = {};
     let ipwhoData = {};
+    let ipInfoSuccess = false;
+
     try {
-        const ipRes = await fetch(`https://ipwho.is/${ip}`);
-        const result = await ipRes.json();
-        if (result.success) {
-            ipwhoData = result;
+        const [ipDetectiveRes, ipWhoRes] = await Promise.allSettled([
+            fetchWithTimeout(`https://ipdetective.p.rapidapi.com/ip/${ip}?info=true`, {
+                method: 'GET',
+                headers: {
+                    'x-rapidapi-key': process.env.X_API_KEY,
+                    'x-rapidapi-host': 'ipdetective.p.rapidapi.com'
+                }
+            }, 5000),
+
+            fetchWithTimeout(`https://ipwho.is/${ip}`, {}, 5000)
+        ]);
+
+        if (ipDetectiveRes.status === "fulfilled") {
+            const result = await ipDetectiveRes.value.json();
+            if (result && !result.error) {
+                ipData = result;
+                ipInfoSuccess = true;
+            } else {
+                console.warn("IPDetective returned invalid data:", result);
+            }
+        } else {
+            console.warn("IPDetective fetch failed:", ipDetectiveRes.reason);
         }
+
+        if (ipWhoRes.status === "fulfilled") {
+            const result = await ipWhoRes.value.json();
+            if (result.success) {
+                ipwhoData = result;
+                ipInfoSuccess = true;
+            } else {
+                console.warn("ipwho.is returned invalid data:", result);
+            }
+        } else {
+            console.warn("ipwho.is fetch failed:", ipWhoRes.reason);
+        }
+
+        if (!ipInfoSuccess) {
+            console.error("Both IP info services failed");
+            return NextResponse.json(
+                { error: "Unable to verify IP location" },
+                { status: 502 }
+            );
+        }
+
     } catch (err) {
-        console.error("ipwho.is fetch failed:", err);
+        console.error("Unexpected IP info error:", err);
+        return NextResponse.json({ error: "IP info lookup error" }, { status: 500 });
     }
 
     const botProviders = [

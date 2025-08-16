@@ -714,6 +714,10 @@ export default function ShortlinkTab({
 															displayUrl === "CLEAR STATUS CACHE!"
 																? "font-bold rounded-full px-2 py-1 w-max h-max text-xs text-red-700 ring-1 ring-white bg-gray-600/10"
 																: ""
+														} ${
+															displayUrl === "NEED UPDATE!"
+																? "font-bold rounded-full px-2 py-1 w-max h-max text-xs text-red-700 ring-1 ring-red-700 bg-orange-600/10"
+																: ""
 														}`}
 													>
 														{displayUrl}
@@ -746,7 +750,7 @@ export default function ShortlinkTab({
 														: displayStatus === "RED FLAG"
 														? "text-red-600 ring-1 ring-red-500 bg-red-600/10"
 														: displayStatus === "NEED UPDATE!"
-														? "text-orange-600 ring-1 ring-orange-500 bg-orange-600/10"
+														? "text-red-700 ring-1 ring-red-700 bg-orange-600/10"
 														: "text-red-700 ring-1 ring-white bg-gray-600/10"
 												}`}
 											>
