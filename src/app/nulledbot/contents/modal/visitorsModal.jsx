@@ -66,6 +66,16 @@ export default function VisitorsModal({ data, shortlinkKey, onClose }) {
 	const humanCount = visitors.filter((v) => !v.isBot).length;
 	const blockedCount = visitors.filter((v) => v.isBlocked).length;
 
+	const getDisplayUrl = () => {
+		if (
+			data?.primaryUrlStatus === "DEAD" ||
+			data?.primaryUrlStatus === "RED FLAG"
+		) {
+			return data?.secondaryUrl || data?.url;
+		}
+		return data?.url;
+	};
+
 	return (
 		<div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex p-4">
 			<motion.div
@@ -76,7 +86,8 @@ export default function VisitorsModal({ data, shortlinkKey, onClose }) {
 			>
 				<div className="flex gap-6 mb-5">
 					<h3 className="text-sm lg:text-xl font-bold mb-4">
-						Visitors for : <span className="text-blue-400">{data?.url}</span>
+						Visitors for :{" "}
+						<span className="text-blue-400">{getDisplayUrl()}</span>
 					</h3>
 
 					<button

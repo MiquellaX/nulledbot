@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 
 const CACHE_KEY = "statusCache";
-const CACHE_DURATION = 10 * 60 * 1000;
+const CACHE_DURATION = 1 * 60 * 1000;
 
 const loadStatusCache = () => {
 	try {
@@ -110,140 +110,183 @@ export default function ShortlinkTab({
 
 	const checkAndUpdateStatus = async (url, key, secondaryUrl) => {
 		setLoadingKeys((prev) => ({ ...prev, [key]: true }));
-
 		const now = Date.now();
 		const cache = loadStatusCache();
 
 		const urlCache = cache[key]?.[url];
-		const isFreshPrimary =
-			urlCache && now - urlCache.timestamp < CACHE_DURATION;
+		let isFreshPrimary = false;
+
+		if (urlCache && urlCache.timestamp) {
+			isFreshPrimary = now - urlCache.timestamp < CACHE_DURATION;
+		}
+
 		if (isFreshPrimary) {
-			setLiveStatuses((prev) => ({ ...prev, [key]: urlCache.status }));
+			setLiveStatuses((prev) => ({
+				...prev,
+				[key]: {
+					status: urlCache.status,
+					source: "primary",
+				},
+			}));
 			setLoadingKeys((prev) => ({ ...prev, [key]: false }));
 			return;
 		}
 
 		if (secondaryUrl) {
 			const secondaryCache = cache[key]?.[secondaryUrl];
-			const isFreshSecondary =
-				secondaryCache && now - secondaryCache.timestamp < CACHE_DURATION;
+			let isFreshSecondary = false;
+
+			if (secondaryCache && secondaryCache.timestamp) {
+				isFreshSecondary = now - secondaryCache.timestamp < CACHE_DURATION;
+			}
 
 			if (isFreshSecondary) {
-				setLiveStatuses((prev) => ({ ...prev, [key]: secondaryCache.status }));
+				setLiveStatuses((prev) => ({
+					...prev,
+					[key]: {
+						status: secondaryCache.status,
+						source: "secondary",
+					},
+				}));
 				setLoadingKeys((prev) => ({ ...prev, [key]: false }));
 				return;
 			}
 		}
+		const isPrimarySafe = await checkUrlSafety(url);
+		let isPrimaryReachable = false;
+		let primaryStatus = "";
 
-		const isSafe = await checkUrlSafety(url);
-		if (!isSafe) {
-			if (secondaryUrl) {
-				const safeSecondary = await checkUrlSafety(secondaryUrl);
-				if (safeSecondary) {
-					const reachableSecondary = await checkUrlReachability(secondaryUrl);
-					const status = reachableSecondary ? "LIVE" : "DEAD";
-					cache[key] = cache[key] || {};
-					cache[key][secondaryUrl] = { status, timestamp: now };
-					saveStatusCache(cache);
-					setLiveStatuses((prev) => ({ ...prev, [key]: status }));
-					setLoadingKeys((prev) => ({ ...prev, [key]: false }));
-					return;
-				}
-			}
-
-			const status = "RED FLAG";
-			cache[key] = cache[key] || {};
-			cache[key][url] = { status, timestamp: now };
-			saveStatusCache(cache);
-			setLiveStatuses((prev) => ({ ...prev, [key]: status }));
-			setLoadingKeys((prev) => ({ ...prev, [key]: false }));
-			return;
+		if (!isPrimarySafe) {
+			primaryStatus = "RED FLAG";
+		} else {
+			isPrimaryReachable = await checkUrlReachability(url);
+			primaryStatus = isPrimaryReachable ? "LIVE" : "DEAD";
 		}
+		await syncStatusToDB(key, url, primaryStatus, "primary");
+		let secondaryStatus = "";
+		let isSecondaryReachable = false;
 
-		const isReachable = await checkUrlReachability(url);
-		if (!isReachable && secondaryUrl) {
-			const isSafeSecondary = await checkUrlSafety(secondaryUrl);
-			if (isSafeSecondary) {
-				const isReachableSecondary = await checkUrlReachability(secondaryUrl);
-				const status = isReachableSecondary ? "LIVE" : "DEAD";
-				cache[key] = cache[key] || {};
-				cache[key][secondaryUrl] = { status, timestamp: now };
-				saveStatusCache(cache);
-				setLiveStatuses((prev) => ({ ...prev, [key]: status }));
-				setLoadingKeys((prev) => ({ ...prev, [key]: false }));
-				return;
+		if (secondaryUrl) {
+			const isSecondarySafe = await checkUrlSafety(secondaryUrl);
+			if (!isSecondarySafe) {
+				secondaryStatus = "RED FLAG";
+			} else {
+				isSecondaryReachable = await checkUrlReachability(secondaryUrl);
+				secondaryStatus = isSecondaryReachable ? "LIVE" : "DEAD";
 			}
+			await syncStatusToDB(key, secondaryUrl, secondaryStatus, "secondary");
 		}
-
-		const status = isReachable ? "LIVE" : "DEAD";
-		cache[key] = cache[key] || {};
-		cache[key][url] = { status, timestamp: now };
+		cache[key] = {
+			[url]: { status: primaryStatus, timestamp: now },
+			...(secondaryUrl && {
+				[secondaryUrl]: { status: secondaryStatus, timestamp: now },
+			}),
+		};
 		saveStatusCache(cache);
+		let finalStatus = "";
+		let source = null;
 
-		setLiveStatuses((prev) => ({ ...prev, [key]: status }));
+		if (primaryStatus === "LIVE") {
+			finalStatus = "LIVE";
+			source = "primary";
+		} else if (secondaryStatus === "LIVE") {
+			finalStatus = "LIVE";
+			source = "secondary";
+		} else if (
+			(primaryStatus === "DEAD" || primaryStatus === "RED FLAG") &&
+			(secondaryStatus === "DEAD" || secondaryStatus === "RED FLAG")
+		) {
+			finalStatus = "NEED UPDATE!";
+			source = null;
+		} else {
+			finalStatus = "WAIT";
+			source = null;
+		}
+
+		setLiveStatuses((prev) => ({
+			...prev,
+			[key]: {
+				status: finalStatus,
+				source,
+			},
+		}));
+
 		setLoadingKeys((prev) => ({ ...prev, [key]: false }));
 	};
 
 	const manualCheckUrl = async (url, key, secondaryUrl) => {
 		setLoadingKeys((prev) => ({ ...prev, [key]: true }));
+		const toastId = toast.loading(`Checking URLs...`);
+		const now = Date.now();
 
-		const activeUrl = getActiveUrl(url, secondaryUrl, liveStatuses, key);
-		const toastId = toast.loading(`Checking URL...`);
+		let primaryStatus = "";
+		let secondaryStatus = "";
 
 		try {
-			const isSafe = await checkUrlSafety(url);
-			if (!isSafe) {
-				if (secondaryUrl) {
-					const safeSecondary = await checkUrlSafety(secondaryUrl);
-					if (safeSecondary) {
-						const reachableSecondary = await checkUrlReachability(secondaryUrl);
-						const status = reachableSecondary ? "LIVE" : "DEAD";
-						setLiveStatuses((prev) => ({ ...prev, [key]: status }));
+			const isPrimarySafe = await checkUrlSafety(url);
+			let isPrimaryReachable = false;
 
-						if (status.includes("LIVE")) {
-							toast.success(`"${secondaryUrl}" is LIVE`, {
-								id: toastId,
-							});
-						} else {
-							toast.warning(`"${secondaryUrl}" is DEAD`, { id: toastId });
-						}
-						return;
-					}
-				}
-
-				const status = "RED FLAG";
-				setLiveStatuses((prev) => ({ ...prev, [key]: status }));
-				toast.error(`"${url}" is RF`, { id: toastId });
-				return;
-			}
-
-			const isReachable = await checkUrlReachability(url);
-			if (!isReachable && secondaryUrl) {
-				const isSafeSecondary = await checkUrlSafety(secondaryUrl);
-				if (isSafeSecondary) {
-					const isReachableSecondary = await checkUrlReachability(secondaryUrl);
-					const status = isReachableSecondary ? "LIVE" : "DEAD";
-					setLiveStatuses((prev) => ({ ...prev, [key]: status }));
-
-					if (status.includes("LIVE")) {
-						toast.success(`"${secondaryUrl}" is LIVE`, {
-							id: toastId,
-						});
-					} else {
-						toast.warning(`"${secondaryUrl}" is DEAD`, { id: toastId });
-					}
-					return;
-				}
-			}
-
-			const status = isReachable ? "LIVE" : "DEAD";
-			setLiveStatuses((prev) => ({ ...prev, [key]: status }));
-
-			if (status === "LIVE") {
-				toast.success(`"${url}" is LIVE`, { id: toastId });
+			if (!isPrimarySafe) {
+				primaryStatus = "RED FLAG";
+				toast.error(`Primary URL "${url}" is RF`);
 			} else {
-				toast.warning(`"${url}" is DEAD`, { id: toastId });
+				isPrimaryReachable = await checkUrlReachability(url);
+				primaryStatus = isPrimaryReachable ? "LIVE" : "DEAD";
+				toast[isPrimaryReachable ? "success" : "warning"](
+					`Primary URL "${url}" is ${primaryStatus}`
+				);
 			}
+			await syncStatusToDB(key, url, primaryStatus, "primary");
+			let isSecondaryReachable = false;
+			if (secondaryUrl) {
+				const isSecondarySafe = await checkUrlSafety(secondaryUrl);
+
+				if (!isSecondarySafe) {
+					secondaryStatus = "RED FLAG";
+					toast.error(`Secondary URL "${secondaryUrl}" is RF`);
+				} else {
+					isSecondaryReachable = await checkUrlReachability(secondaryUrl);
+					secondaryStatus = isSecondaryReachable ? "LIVE" : "DEAD";
+					toast[isSecondaryReachable ? "success" : "warning"](
+						`Secondary URL "${secondaryUrl}" is ${secondaryStatus}`
+					);
+				}
+				await syncStatusToDB(key, secondaryUrl, secondaryStatus, "secondary");
+			}
+			let finalStatus = "";
+			let source = null;
+
+			if (primaryStatus === "LIVE") {
+				finalStatus = "LIVE";
+				source = "primary";
+			} else if (secondaryStatus === "LIVE") {
+				finalStatus = "LIVE";
+				source = "secondary";
+			} else if (
+				(primaryStatus === "DEAD" || primaryStatus === "RED FLAG") &&
+				(secondaryStatus === "DEAD" || secondaryStatus === "RED FLAG")
+			) {
+				finalStatus = "NEED UPDATE!";
+			} else {
+				finalStatus = "WAIT";
+			}
+			const cache = loadStatusCache();
+			cache[key] = {
+				[url]: { status: primaryStatus, timestamp: now },
+				...(secondaryUrl && {
+					[secondaryUrl]: { status: secondaryStatus, timestamp: now },
+				}),
+			};
+			saveStatusCache(cache);
+			setLiveStatuses((prev) => ({
+				...prev,
+				[key]: {
+					status: finalStatus,
+					source,
+				},
+			}));
+
+			toast.success(`Check complete for "${key}"`, { id: toastId });
 		} catch (err) {
 			toast.error(`Error checking "${url}"`, { id: toastId });
 		} finally {
@@ -251,26 +294,32 @@ export default function ShortlinkTab({
 		}
 	};
 
-	const getActiveUrl = (url, secondaryUrl, liveStatuses, key) => {
-		const status = liveStatuses[key];
-
-		if (status === "DEAD" || status === "RED FLAG") {
-			return secondaryUrl || url;
+	const syncStatusToDB = async (key, url, status, type) => {
+		try {
+			await fetch("/api/shortlinks/status", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ key, url, status, type }),
+			});
+		} catch (err) {
+			console.error("Failed to sync status to DB:", err);
 		}
-		return url;
 	};
 
 	useEffect(() => {
 		const interval = setInterval(() => {
 			shortlinks.forEach((sl) => {
-				if (!loadingKeys[sl.key]) {
+				if (
+					!loadingKeys[sl.key] &&
+					(!liveStatuses[sl.key] || liveStatuses[sl.key].status !== "LIVE")
+				) {
 					checkAndUpdateStatus(sl.url, sl.key, sl.secondaryUrl);
 				}
 			});
 		}, 5000);
 
 		return () => clearInterval(interval);
-	}, [shortlinks, loadingKeys]);
+	}, [shortlinks, loadingKeys, liveStatuses]);
 
 	return (
 		<motion.div
@@ -519,225 +568,318 @@ export default function ShortlinkTab({
 
 			{shortlinks.length > 0 ? (
 				<div className="grid grid-cols-1 gap-4">
-					{shortlinks.map((sl) => (
-						<div
-							key={sl.key}
-							className="ring-1 rounded-lg shadow-md p-4 hover:bg-white/10 transition-colors cursor-default"
-						>
-							<div className="flex flex-col md:flex-row lg:flex-row xl:flex-row flex-wrap justify-between text-xs md:text-sm gap-y-2">
-								<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 text-xs md:text-sm lg:text-sm xl:text-sm">
-									<span className="text-white">Owner</span>
-									<span className="text-amber-400 font-semibold">
-										{sl.owner.toUpperCase()}
-									</span>
-								</div>
+					{shortlinks.map((sl) => {
+						const isLoading = loadingKeys[sl.key];
+						const liveData = liveStatuses[sl.key];
 
-								<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 text-xs md:text-sm lg:text-sm xl:text-sm">
-									<span className="text-white">Created</span>
-									<span className="text-green-400 font-semibold">
-										{new Date(sl.createdAt).toLocaleTimeString("en-US", {
-											hour: "2-digit",
-											minute: "2-digit",
-											hour12: true,
-											timeZone: "Asia/Jakarta",
-										})}
-									</span>
-								</div>
+						let displayStatus = "WAIT";
+						let displayUrl = null;
 
-								<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 text-xs md:text-sm lg:text-sm xl:text-sm">
-									<span className="text-white">Updated</span>
-									<span
-										className={
-											sl.updatedAt === sl.createdAt
-												? "text-red-700 font-semibold"
-												: "text-amber-500 font-semibold"
-										}
-									>
-										{sl.updatedAt === sl.createdAt
-											? "NO UPDATE YET"
-											: new Date(sl.updatedAt).toLocaleTimeString("en-US", {
-													hour: "2-digit",
-													minute: "2-digit",
-													hour12: true,
-													timeZone: "Asia/Jakarta",
-											  })}
-									</span>
-								</div>
+						if (isLoading) {
+							displayStatus = "loading";
+						} else if (liveData) {
+							if (liveData.status === "LIVE") {
+								displayStatus = "LIVE";
+								displayUrl =
+									liveData.source === "secondary" ? sl.secondaryUrl : sl.url;
+							} else if (liveData.status === "NEED UPDATE!") {
+								displayStatus = "NEED UPDATE!";
+								displayUrl = "NEED UPDATE!";
+							} else {
+								displayStatus = "CLEAR STATUS CACHE!";
+								displayUrl = "CLEAR STATUS CACHE!";
+							}
+						} else {
+							const primary = sl.primaryUrlStatus;
+							const secondary = sl.secondaryUrlStatus;
 
-								<div className="flex flex-col text-xs md:text-sm lg:text-sm xl:text-sm">
-									<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 w-full break-words">
-										<span className="text-white">URL</span>
-										<span className="text-blue-400 font-semibold">
-											{sl.primaryUrlStatus === "DEAD" ||
-											sl.primaryUrlStatus === "RED FLAG"
-												? sl.secondaryUrl || sl.url
-												: sl.url}
+							if (primary === "LIVE") {
+								displayStatus = "LIVE";
+								displayUrl = sl.url;
+							} else if (secondary === "LIVE") {
+								displayStatus = "LIVE";
+								displayUrl = sl.secondaryUrl;
+							} else if (
+								(primary === "DEAD" || primary === "RED FLAG") &&
+								(secondary === "DEAD" || secondary === "RED FLAG")
+							) {
+								displayStatus = "NEED UPDATE!";
+								displayUrl = "NEED UPDATE!";
+							} else {
+								displayStatus = primary || secondary || "WAIT";
+								displayUrl = sl.url;
+							}
+						}
+
+						return (
+							<div
+								key={sl.key}
+								className="ring-1 rounded-lg shadow-md p-4 hover:bg-white/10 transition-colors cursor-default"
+							>
+								<div className="flex flex-col md:flex-row lg:flex-row xl:flex-row flex-wrap justify-between text-xs md:text-sm gap-y-2">
+									<div className="flex flex-col gap-0 md:gap-2">
+										<span className="text-white">Owner</span>
+										<span className="text-amber-400 font-semibold">
+											{sl.owner.toUpperCase()}
 										</span>
 									</div>
-								</div>
 
-								<div className="flex flex-col text-xs md:text-sm lg:text-sm xl:text-sm">
-									<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2">
-										<span className="text-white">Key</span>
-										<span className="text-cyan-400 font-semibold">
-											{sl.key}
+									<div className="flex flex-col gap-0 md:gap-2">
+										<span className="text-white">Created</span>
+										<span className="text-green-400 font-semibold">
+											{new Date(sl.createdAt).toLocaleTimeString("en-US", {
+												hour: "2-digit",
+												minute: "2-digit",
+												hour12: true,
+												timeZone: "Asia/Jakarta",
+											})}
 										</span>
 									</div>
-								</div>
 
-								<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 text-xs md:text-sm lg:text-sm xl:text-sm">
-									<span className="text-white">Status</span>
-									<span
-										className={`font-bold rounded-full px-2 py-1 w-max h-max text-xs ${
-											liveStatuses[sl.key] === "LIVE"
-												? "text-green-600 ring-1 ring-green-500 bg-green-600/10"
-												: liveStatuses[sl.key] === "DEAD"
-												? "text-yellow-600 ring-1 ring-yellow-500 bg-yellow-600/10"
-												: liveStatuses[sl.key] === "RED FLAG"
-												? "text-red-600 ring-1 ring-red-500 bg-red-600/10"
-												: "text-gray-400 ring-1 ring-gray-500 bg-gray-600/10"
-										}`}
-									>
-										{loadingKeys[sl.key] ? (
-											<svg
-												className="w-[33px] h-4 fill-amber-50"
-												viewBox="0 0 24 24"
-												xmlns="http://www.w3.org/2000/svg"
-											>
-												<circle cx="4" cy="12" r="3">
-													<animate
-														id="spinner_jObz"
-														begin="0;spinner_vwSQ.end-0.25s"
-														attributeName="r"
-														dur="0.75s"
-														values="3;.2;3"
-													/>
-												</circle>
-												<circle cx="12" cy="12" r="3">
-													<animate
-														begin="spinner_jObz.end-0.6s"
-														attributeName="r"
-														dur="0.75s"
-														values="3;.2;3"
-													/>
-												</circle>
-												<circle cx="20" cy="12" r="3">
-													<animate
-														id="spinner_vwSQ"
-														begin="spinner_jObz.end-0.45s"
-														attributeName="r"
-														dur="0.75s"
-														values="3;.2;3"
-													/>
-												</circle>
-											</svg>
-										) : liveStatuses[sl.key] === "RED FLAG" ? (
-											"RF"
-										) : (
-											liveStatuses[sl.key] || "WAIT"
-										)}
-									</span>
-								</div>
+									<div className="flex flex-col gap-0 md:gap-2">
+										<span className="text-white">Updated</span>
+										<span
+											className={
+												sl.updatedAt === sl.createdAt
+													? "text-red-700 font-semibold"
+													: "text-amber-500 font-semibold"
+											}
+										>
+											{sl.updatedAt === sl.createdAt
+												? "NO UPDATE YET"
+												: new Date(sl.updatedAt).toLocaleTimeString("en-US", {
+														hour: "2-digit",
+														minute: "2-digit",
+														hour12: true,
+														timeZone: "Asia/Jakarta",
+												  })}
+										</span>
+									</div>
 
-								<div className="flex flex-col text-xs md:text-sm lg:text-sm xl:text-sm">
-									<div className="flex flex-col gap-0 md:gap-2 lg:gap-2 xl:gap-2 w-full">
-										<span className="text-white">Actions</span>
-										<div className="flex gap-4 mt-1">
-											<button
-												onClick={() =>
-													setEditModal({
-														open: true,
-														data: { ...sl, originalKey: sl.key },
-														loading: false,
-														error: "",
-													})
-												}
-												title="Edit Shortlink"
-												className="text-yellow-400 hover:text-yellow-300 transition"
-											>
-												<FaCogs className="setting-icon" />
-											</button>
-											<button
-												onClick={() =>
-													manualCheckUrl(sl.url, sl.key, sl.secondaryUrl)
-												}
-												title="Check URL"
-												className="text-yellow-400 hover:text-yellow-300 transition"
-											>
-												<FaReact className="check-icon" />
-											</button>
-											<button
-												onClick={() => {
-													localStorage.removeItem("statusCache");
-													toast.success("Status Cache Cleared.");
-												}}
-												title="Clear Status Cache"
-												className="text-yellow-400 hover:text-yellow-300 transition"
-											>
-												<FaCode className="cache-icon" />
-											</button>
+									<div className="flex flex-col text-xs md:text-sm">
+										<div className="flex flex-col gap-0 md:gap-2 w-full break-words">
+											<span className="text-white">URL</span>
+											<span className="text-blue-400 font-semibold flex items-center gap-1">
+												{isLoading ? (
+													<span className="font-bold rounded-full px-2 py-1 w-max h-max text-xs text-gray-400 ring-1 ring-gray-500 bg-gray-600/10">
+														<svg
+															className="w-[33px] h-4 fill-amber-50"
+															viewBox="0 0 24 24"
+															xmlns="http://www.w3.org/2000/svg"
+														>
+															<circle cx="4" cy="12" r="3">
+																<animate
+																	id="spinner_jObz"
+																	begin="0;spinner_vwSQ.end-0.25s"
+																	attributeName="r"
+																	dur="0.75s"
+																	values="3;.2;3"
+																/>
+															</circle>
+															<circle cx="12" cy="12" r="3">
+																<animate
+																	begin="spinner_jObz.end-0.6s"
+																	attributeName="r"
+																	dur="0.75s"
+																	values="3;.2;3"
+																/>
+															</circle>
+															<circle cx="20" cy="12" r="3">
+																<animate
+																	id="spinner_vwSQ"
+																	begin="spinner_jObz.end-0.45s"
+																	attributeName="r"
+																	dur="0.75s"
+																	values="3;.2;3"
+																/>
+															</circle>
+														</svg>
+													</span>
+												) : (
+													<span
+														className={`truncate ${
+															displayUrl === "CLEAR STATUS CACHE!"
+																? "font-bold rounded-full px-2 py-1 w-max h-max text-xs text-red-700 ring-1 ring-white bg-gray-600/10"
+																: ""
+														}`}
+													>
+														{displayUrl}
+													</span>
+												)}
+											</span>
+										</div>
+									</div>
 
-											<button
-												onClick={() =>
-													setVisitorsModal({
-														open: true,
-														data: { ...sl, originalKey: sl.key },
-													})
-												}
-												title="View Visitors"
-												className="text-blue-400 hover:text-blue-300 transition"
+									<div className="flex flex-col text-xs md:text-sm">
+										<div className="flex flex-col gap-0 md:gap-2">
+											<span className="text-white">Key</span>
+											<span className="text-cyan-400 font-semibold">
+												{sl.key}
+											</span>
+										</div>
+									</div>
+
+									<div className="flex flex-col text-xs md:text-sm">
+										<div className="flex flex-col gap-0 md:gap-2 w-full break-words">
+											<span className="text-white">Status</span>
+											<span
+												className={`font-bold rounded-full px-2 py-1 w-max h-max text-xs ${
+													isLoading
+														? "text-gray-400 ring-1 ring-gray-500 bg-gray-600/10"
+														: displayStatus === "LIVE"
+														? "text-green-600 ring-1 ring-green-500 bg-green-600/10"
+														: displayStatus === "DEAD"
+														? "text-yellow-600 ring-1 ring-yellow-500 bg-yellow-600/10"
+														: displayStatus === "RED FLAG"
+														? "text-red-600 ring-1 ring-red-500 bg-red-600/10"
+														: displayStatus === "NEED UPDATE!"
+														? "text-orange-600 ring-1 ring-orange-500 bg-orange-600/10"
+														: "text-red-700 ring-1 ring-white bg-gray-600/10"
+												}`}
 											>
-												<FaEye className="view-icon" />
-											</button>
-											<button
-												onClick={() => {
-													confirmToast({
-														message: `Delete shortlink: "${sl.url}"?`,
-														onConfirm: async () => {
-															toast.promise(
-																(async () => {
-																	const res = await fetch("/api/shortlinks", {
-																		method: "DELETE",
-																		credentials: "include",
-																		headers: {
-																			"Content-Type": "application/json",
-																		},
-																		body: JSON.stringify({ key: sl.key }),
-																	});
-																	const data = await res.json();
-																	if (!res.ok || !data.success) {
-																		throw new Error(
-																			data.error || "Failed to delete"
+												{isLoading ? (
+													<svg
+														className="w-[33px] h-4 fill-amber-50"
+														viewBox="0 0 24 24"
+														xmlns="http://www.w3.org/2000/svg"
+													>
+														<circle cx="4" cy="12" r="3">
+															<animate
+																id="spinner_jObz"
+																begin="0;spinner_vwSQ.end-0.25s"
+																attributeName="r"
+																dur="0.75s"
+																values="3;.2;3"
+															/>
+														</circle>
+														<circle cx="12" cy="12" r="3">
+															<animate
+																begin="spinner_jObz.end-0.6s"
+																attributeName="r"
+																dur="0.75s"
+																values="3;.2;3"
+															/>
+														</circle>
+														<circle cx="20" cy="12" r="3">
+															<animate
+																id="spinner_vwSQ"
+																begin="spinner_jObz.end-0.45s"
+																attributeName="r"
+																dur="0.75s"
+																values="3;.2;3"
+															/>
+														</circle>
+													</svg>
+												) : displayStatus === "RED FLAG" ? (
+													"RF"
+												) : (
+													displayStatus
+												)}
+											</span>
+										</div>
+									</div>
+
+									<div className="flex flex-col text-xs md:text-sm">
+										<div className="flex flex-col gap-0 md:gap-2 w-full">
+											<span className="text-white">Actions</span>
+											<div className="flex gap-4 mt-1">
+												<button
+													onClick={() =>
+														setEditModal({
+															open: true,
+															data: { ...sl, originalKey: sl.key },
+															loading: false,
+															error: "",
+														})
+													}
+													title="Edit Shortlink"
+													className="text-yellow-400 hover:text-yellow-300 transition"
+												>
+													<FaCogs className="setting-icon" />
+												</button>
+												<button
+													onClick={() =>
+														manualCheckUrl(sl.url, sl.key, sl.secondaryUrl)
+													}
+													title="Check URL"
+													className="text-yellow-400 hover:text-yellow-300 transition"
+												>
+													<FaReact className="check-icon" />
+												</button>
+												<button
+													onClick={() => {
+														localStorage.removeItem("statusCache");
+														setLiveStatuses({});
+														toast.success("Status Cache Cleared.");
+													}}
+													title="Clear Status Cache"
+													className="text-yellow-400 hover:text-yellow-300 transition"
+												>
+													<FaCode className="cache-icon" />
+												</button>
+
+												<button
+													onClick={() =>
+														setVisitorsModal({
+															open: true,
+															data: { ...sl, originalKey: sl.key },
+														})
+													}
+													title="View Visitors"
+													className="text-blue-400 hover:text-blue-300 transition"
+												>
+													<FaEye className="view-icon" />
+												</button>
+												<button
+													onClick={() => {
+														confirmToast({
+															message: `Delete shortlink: "${sl.url}"?`,
+															onConfirm: async () => {
+																toast.promise(
+																	(async () => {
+																		const res = await fetch("/api/shortlinks", {
+																			method: "DELETE",
+																			credentials: "include",
+																			headers: {
+																				"Content-Type": "application/json",
+																			},
+																			body: JSON.stringify({ key: sl.key }),
+																		});
+																		const data = await res.json();
+																		if (!res.ok || !data.success) {
+																			throw new Error(
+																				data.error || "Failed to delete"
+																			);
+																		}
+																		setShortlinks(
+																			shortlinks.filter((s) => s.key !== sl.key)
 																		);
+																		return "Deleted";
+																	})(),
+																	{
+																		loading: "Deleting...",
+																		success: `Shortlink "${sl.url}" deleted.`,
+																		error: (err) => `Failed: ${err.message}`,
 																	}
-																	setShortlinks(
-																		shortlinks.filter((s) => s.key !== sl.key)
-																	);
-																	return "Deleted";
-																})(),
-																{
-																	loading: "Deleting...",
-																	success: `Shortlink "${sl.url}" deleted.`,
-																	error: (err) => `Failed: ${err.message}`,
-																}
-															);
-														},
-														onCancel: () => {
-															toast("Deletion cancelled.");
-														},
-													});
-												}}
-												title="Delete Shortlink"
-												className="text-red-400 hover:text-red-300 transition"
-											>
-												<FaTrash className="delete-icon" />
-											</button>
+																);
+															},
+															onCancel: () => {
+																toast("Deletion cancelled.");
+															},
+														});
+													}}
+													title="Delete Shortlink"
+													className="text-red-400 hover:text-red-300 transition"
+												>
+													<FaTrash className="delete-icon" />
+												</button>
+											</div>
 										</div>
 									</div>
 								</div>
 							</div>
-						</div>
-					))}
+						);
+					})}
 				</div>
 			) : (
 				<div className="text-center text-white mt-4">NO SHORTLINKS YET</div>
