@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Toaster } from "sonner";
 import Script from "next/script";
+import Head from "next/head";
 
 export const metadata = {
     title: `NulledBot #HOME`,
@@ -59,6 +60,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
     return (
         <html lang="en" data-scroll-behavior="smooth">
+            <Head><meta name="google-site-verification" content="rfQf_mmYNUbYylSGa9v7iD9h4zcXYXUhbcew-4i05Z4" /></Head>
             <body className="antialiased" style={{ fontFamily: "var(--font-nulledbot)" }}>
                 <Toaster richColors position="top-right" />
                 {children}
