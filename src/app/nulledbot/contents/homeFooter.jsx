@@ -65,7 +65,7 @@ function Modal({
 					transition={{ duration: 0.2 }}
 				>
 					<motion.div
-						className="bg-zinc-900 text-white max-w-md w-full p-6 rounded-lg shadow-xl relative"
+						className="ring-1 bg-gradient-to-br from-black to-red-900 text-white max-w-md w-full p-6 rounded-lg shadow-xl relative"
 						initial={{ scale: 0.95, opacity: 0 }}
 						animate={{ scale: 1, opacity: 1 }}
 						exit={{ scale: 0.95, opacity: 0 }}

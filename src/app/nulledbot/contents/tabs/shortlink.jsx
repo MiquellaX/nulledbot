@@ -6,6 +6,7 @@ import VisitorsModal from "@/app/nulledbot/contents/modal/visitorsModal";
 import { confirmToast } from "@/lib/confirmToast";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import Loading from "./loading";
 
 const CACHE_KEY = "statusCache";
 const CACHE_DURATION = 3 * 60 * 1000;
@@ -27,8 +28,6 @@ export default function ShortlinkTab({
 	setForm,
 	formError,
 	setFormError,
-	formLoading,
-	setFormLoading,
 	shortlinks,
 	setShortlinks,
 	visitorsModal,
@@ -39,6 +38,7 @@ export default function ShortlinkTab({
 }) {
 	const [liveStatuses, setLiveStatuses] = useState({});
 	const [loadingKeys, setLoadingKeys] = useState({});
+	const [formLoading, setFormLoading] = useState(false);
 	const handleDownload = async () => {
 		try {
 			const res = await fetch("/api/download");
@@ -349,7 +349,7 @@ export default function ShortlinkTab({
 			animate={{ opacity: 1 }}
 			exit={{ opacity: 0 }}
 			transition={{ duration: 0.5 }}
-			className="rounded-lg border bg-black border-white shadow p-6"
+			className="rounded-lg border bg-gradient-to-br from-black/30 to-red-700/50 border-white shadow p-6"
 		>
 			<div className="flex flex-col md:flex-row lg:flex-row xl:flex-row justify-between border-b mb-10 border-white/20">
 				<h2 className="text-xl font-bold mb-4">
@@ -366,7 +366,7 @@ export default function ShortlinkTab({
 			</div>
 
 			<form
-				className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+				className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 bg-white/10 p-6 rounded-lg ring-1"
 				onSubmit={async (e) => {
 					e.preventDefault();
 					setFormLoading(true);
@@ -549,51 +549,16 @@ export default function ShortlinkTab({
 				<div className="flex justify-center items-center">
 					<button
 						type="submit"
-						className="tombol hover:ring-green-600 mt-3 flex justify-center"
+						className="tombol ring-black hover:ring-green-600 mt-3 flex justify-center"
 						disabled={formLoading}
 					>
-						{formLoading ? (
-							<svg
-								className="w-6 h-6"
-								viewBox="0 0 24 24"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<circle cx="4" cy="12" r="3">
-									<animate
-										id="spinner_jObz"
-										begin="0;spinner_vwSQ.end-0.25s"
-										attributeName="r"
-										dur="0.75s"
-										values="3;.2;3"
-									/>
-								</circle>
-								<circle cx="12" cy="12" r="3">
-									<animate
-										begin="spinner_jObz.end-0.6s"
-										attributeName="r"
-										dur="0.75s"
-										values="3;.2;3"
-									/>
-								</circle>
-								<circle cx="20" cy="12" r="3">
-									<animate
-										id="spinner_vwSQ"
-										begin="spinner_jObz.end-0.45s"
-										attributeName="r"
-										dur="0.75s"
-										values="3;.2;3"
-									/>
-								</circle>
-							</svg>
-						) : (
-							"Generate Shortlink"
-						)}
+						{formLoading ? <Loading /> : "Generate Shortlink"}
 					</button>
 				</div>
 			</form>
 
 			{shortlinks.length > 0 ? (
-				<div className="grid grid-cols-1 gap-4">
+				<div className="grid grid-cols-1 gap-2 rounded-lg">
 					{shortlinks.map((sl) => {
 						const isLoading = loadingKeys[sl.key];
 						const liveData = liveStatuses[sl.key];
@@ -640,7 +605,7 @@ export default function ShortlinkTab({
 						return (
 							<div
 								key={sl.key}
-								className="ring-1 rounded-lg shadow-md p-4 hover:bg-white/10 transition-colors cursor-default"
+								className="ring-1 hover:ring-green-700 bg-black/70 rounded-lg shadow-md p-4 transition cursor-default"
 							>
 								<div className="flex flex-col md:flex-row lg:flex-row xl:flex-row flex-wrap justify-between text-xs md:text-sm gap-y-2">
 									<div className="flex flex-col gap-0 md:gap-2">
@@ -688,38 +653,7 @@ export default function ShortlinkTab({
 											<span className="text-blue-400 font-semibold flex items-center gap-1">
 												{isLoading ? (
 													<span className="font-bold rounded-full px-2 py-1 w-max h-max text-xs text-gray-400 ring-1 ring-gray-500 bg-gray-600/10">
-														<svg
-															className="w-[33px] h-4 fill-amber-50"
-															viewBox="0 0 24 24"
-															xmlns="http://www.w3.org/2000/svg"
-														>
-															<circle cx="4" cy="12" r="3">
-																<animate
-																	id="spinner_jObz"
-																	begin="0;spinner_vwSQ.end-0.25s"
-																	attributeName="r"
-																	dur="0.75s"
-																	values="3;.2;3"
-																/>
-															</circle>
-															<circle cx="12" cy="12" r="3">
-																<animate
-																	begin="spinner_jObz.end-0.6s"
-																	attributeName="r"
-																	dur="0.75s"
-																	values="3;.2;3"
-																/>
-															</circle>
-															<circle cx="20" cy="12" r="3">
-																<animate
-																	id="spinner_vwSQ"
-																	begin="spinner_jObz.end-0.45s"
-																	attributeName="r"
-																	dur="0.75s"
-																	values="3;.2;3"
-																/>
-															</circle>
-														</svg>
+														<Loading className={"w-[33px] h-4"} />
 													</span>
 												) : (
 													<span
@@ -768,38 +702,7 @@ export default function ShortlinkTab({
 												}`}
 											>
 												{isLoading ? (
-													<svg
-														className="w-[33px] h-4 fill-amber-50"
-														viewBox="0 0 24 24"
-														xmlns="http://www.w3.org/2000/svg"
-													>
-														<circle cx="4" cy="12" r="3">
-															<animate
-																id="spinner_jObz"
-																begin="0;spinner_vwSQ.end-0.25s"
-																attributeName="r"
-																dur="0.75s"
-																values="3;.2;3"
-															/>
-														</circle>
-														<circle cx="12" cy="12" r="3">
-															<animate
-																begin="spinner_jObz.end-0.6s"
-																attributeName="r"
-																dur="0.75s"
-																values="3;.2;3"
-															/>
-														</circle>
-														<circle cx="20" cy="12" r="3">
-															<animate
-																id="spinner_vwSQ"
-																begin="spinner_jObz.end-0.45s"
-																attributeName="r"
-																dur="0.75s"
-																values="3;.2;3"
-															/>
-														</circle>
-													</svg>
+													<Loading className={"w-[33px] h-4"} />
 												) : displayStatus === "RED FLAG" ? (
 													"RF"
 												) : (

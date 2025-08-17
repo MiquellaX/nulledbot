@@ -48,7 +48,7 @@ html {
 }
 
 .tombol {
-	@apply cursor-pointer border font-semibold bg-red-700 text-black p-2 rounded-lg h-11 items-center flex justify-center col-span-4 w-full hover:ring-2 transition duration-300;
+	@apply cursor-pointer ring-1 font-semibold bg-red-700 text-white p-2 rounded-lg h-11 items-center flex justify-center col-span-4 w-full hover:ring-2 transition duration-300;
 }
 
 .setting-icon {

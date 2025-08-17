@@ -383,14 +383,14 @@ export default function HomePageContents() {
 					].map((feature, index) => (
 						<motion.div
 							key={index}
-							className="p-6 rounded-xl bg-white/90 text-black"
+							className="ring-1 p-6 rounded-xl bg-gradient-to-br from-black/30 to-red-700/50 text-white"
 							initial={{ opacity: 0, y: 30 }}
 							whileInView={{ opacity: 1, y: 0 }}
 							transition={{ delay: index * 0.2, duration: 0.2 }}
 							viewport={{ once: false }}
 						>
 							<h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-							<p className="text-sm text-black/90">{feature.desc}</p>
+							<p className="text-sm text-white/60">{feature.desc}</p>
 						</motion.div>
 					))}
 				</div>
@@ -402,7 +402,7 @@ export default function HomePageContents() {
 			>
 				<h2 className="text-2xl font-bold mb-8">PRICING</h2>
 				<div className="mb-6 flex justify-center">
-					<div className="inline-flex bg-white/90 rounded-full p-1 shadow-inner text-black">
+					<div className="inline-flex bg-gradient-to-br from-black/30 to-red-700/50 rounded-full p-1 shadow-inner text-white">
 						{["weekly", "monthly", "yearly"].map((option, index) => {
 							const isActive = billing === option;
 							return (
@@ -411,8 +411,8 @@ export default function HomePageContents() {
 									onClick={() => setBilling(option)}
 									className={`px-5 py-2 text-xs font-semibold transition-all duration-200 ${
 										isActive
-											? "bg-red-700 text-black hover:text-black cursor-default"
-											: "text-black hover:text-red-700 cursor-pointer transition duration-300"
+											? "bg-red-700 text-white hover:text-white cursor-default"
+											: "text-white hover:text-blue-800 cursor-pointer transition duration-300"
 									}
                                         ${index === 0 ? "rounded-l-full" : ""}
                                         ${index === 2 ? "rounded-r-full" : ""}
@@ -430,7 +430,7 @@ export default function HomePageContents() {
 					{plans.map((plan, index) => (
 						<motion.div
 							key={plan.name}
-							className="bg-white/90 text-black rounded-xl p-6 space-y-4"
+							className="ring-1 bg-gradient-to-br from-black/30 to-red-700/50 text-white rounded-xl p-6 space-y-4"
 							initial={{ opacity: 0, y: 40 }}
 							whileInView={{ opacity: 1, y: 0 }}
 							transition={{ delay: index * 0.2, duration: 0.2 }}
@@ -440,7 +440,7 @@ export default function HomePageContents() {
 							<div className="text-xl font-bold text-green-600">
 								{getPrice(plan)}
 							</div>
-							<ul className="text-left space-y-1 text-black/90 text-sm">
+							<ul className="text-left space-y-1 text-white/60 text-sm">
 								{plan.features.map((f, i) => (
 									<li key={i}>• {f}</li>
 								))}
@@ -483,15 +483,15 @@ export default function HomePageContents() {
 							content: (
 								<>
 									Make a{" "}
-									<code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-sm">
+									<code className="bg-gray-700 px-2 py-1 rounded text-sm">
 										/api/v1/nulledbot/[yourshortlinkkey]
 									</code>{" "}
 									request with headers{" "}
-									<code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-sm">
+									<code className="bg-gray-700 px-2 py-1 rounded text-sm">
 										x-api-key
 									</code>{" "}
 									and{" "}
-									<code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-sm ml-1">
+									<code className="bg-gray-700 px-2 py-1 rounded text-sm ml-1">
 										x-visitor-ip-asli
 									</code>{" "}
 									.

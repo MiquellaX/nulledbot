@@ -39,7 +39,6 @@ export default function DashboardPageContents() {
 		allowedIsp: "",
 	});
 	const [formError, setFormError] = useState("");
-	const [formLoading, setFormLoading] = useState(false);
 	const [navBar, setNavbar] = useState(false);
 	const [editModal, setEditModal] = useState({
 		open: false,
@@ -159,8 +158,6 @@ export default function DashboardPageContents() {
 					setForm={setForm}
 					formError={formError}
 					setFormError={setFormError}
-					formLoading={formLoading}
-					setFormLoading={setFormLoading}
 					shortlinks={shortlinks}
 					setShortlinks={setShortlinks}
 					visitorsModal={visitorsModal}

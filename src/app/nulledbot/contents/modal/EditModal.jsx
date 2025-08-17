@@ -85,10 +85,10 @@ export default function EditModal({
 				initial={{ y: -50, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
 				exit={{ y: -50, opacity: 0 }}
-				className="bg-black border border-white rounded-lg text-white w-full max-w-4xl p-6"
+				className="bg-gradient-to-br from-black/30 to-red-700/50 border border-white rounded-lg text-white w-full max-w-4xl p-6"
 			>
 				<h3 className="text-xl font-bold mb-6">
-					Edit Shortlink:{" "}
+					Edit Shortlink :{" "}
 					<span className="text-blue-400">{getDisplayUrl()}</span>
 				</h3>
 

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RogIconHome } from "@/app/nulledbot/icons/nulledbotIcons";
 import { AnimatePresence, motion } from "framer-motion";
+import Loading from "./tabs/loading";
 
 export default function SignupPageContents() {
 	const [username, setUsername] = useState("");
@@ -50,7 +51,7 @@ export default function SignupPageContents() {
 				>
 					<form
 						onSubmit={handleSubmit}
-						className="bg-black p-8 rounded shadow w-80"
+						className="ring-1 bg-gradient-to-br from-black/30 to-red-700/50 p-8 rounded shadow w-80"
 					>
 						<div className="flex items-center justify-between">
 							<h2 className="text-2xl mb-4">Sign Up</h2>
@@ -81,46 +82,11 @@ export default function SignupPageContents() {
 						<button
 							type="submit"
 							disabled={loading}
-							className={`tombol hover:ring-green-600 ${
+							className={`tombol ring-black hover:ring-green-600 ${
 								loading ? "opacity-70 cursor-not-allowed" : ""
 							}`}
 						>
-							{loading ? (
-								<svg
-									className="w-6 h-6 fill-black"
-									viewBox="0 0 24 24"
-									xmlns="http://www.w3.org/2000/svg"
-								>
-									<circle cx="4" cy="12" r="3">
-										<animate
-											id="spinner_jObz"
-											begin="0;spinner_vwSQ.end-0.25s"
-											attributeName="r"
-											dur="0.75s"
-											values="3;.2;3"
-										/>
-									</circle>
-									<circle cx="12" cy="12" r="3">
-										<animate
-											begin="spinner_jObz.end-0.6s"
-											attributeName="r"
-											dur="0.75s"
-											values="3;.2;3"
-										/>
-									</circle>
-									<circle cx="20" cy="12" r="3">
-										<animate
-											id="spinner_vwSQ"
-											begin="spinner_jObz.end-0.45s"
-											attributeName="r"
-											dur="0.75s"
-											values="3;.2;3"
-										/>
-									</circle>
-								</svg>
-							) : (
-								"Sign Up"
-							)}
+							{loading ? <Loading className={"w-6 h-6"} /> : "Sign Up"}
 						</button>
 						<div className="mt-4 text-center flex gap-2 cursor-pointer">
 							<span>Already have an account? </span>
