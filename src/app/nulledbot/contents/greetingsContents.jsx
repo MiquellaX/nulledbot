@@ -45,7 +45,7 @@ const GreetingsPageContents = ({ message = "Welcome To " }) => {
 
 	setTimeout(() => {
 		window.location.href = `${window.location.origin}/nulledbot/dashboard`;
-	}, 5000);
+	}, 3500);
 
 	return (
 		<div className="flex flex-col items-center justify-center text-center min-h-screen">

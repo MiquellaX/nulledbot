@@ -82,7 +82,7 @@ export default function VisitorsModal({ data, shortlinkKey, onClose }) {
 				initial={{ y: -50, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
 				exit={{ y: -50, opacity: 0 }}
-				className="flex justify-center items-center bg-gradient-to-br from-black/30 to-red-700/50 border border-white rounded-lg w-full scroll p-6 text-white"
+				className="bg-gradient-to-br from-black/30 to-red-700/50 border border-white rounded-lg w-full scroll p-6 text-white"
 			>
 				<div className="flex gap-6 mb-5">
 					<h3 className="text-sm lg:text-xl font-bold mb-4">

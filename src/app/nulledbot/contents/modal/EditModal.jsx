@@ -80,7 +80,7 @@ export default function EditModal({
 	const subType = subscriptionType;
 
 	return (
-		<div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex p-4">
+		<div className="fixed mt-0 md:mt-30 lg:mt-40 xl:mt-50 inset-0 z-50 bg-black bg-opacity-60 flex justify-center h-full md:max-h-[510px] lg:max-h-[430px] xl:max-h-[350px] p-4">
 			<motion.div
 				initial={{ y: -50, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
