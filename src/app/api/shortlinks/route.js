@@ -39,6 +39,27 @@ export async function POST(req) {
     const username = session.user.username;
     const subscriptionType = await getSubscriptionType(username);
 
+    // 👉 Shortlink creation limit enforcement
+    const client = await clientPromise;
+    const db = client.db();
+
+    const existingCount = await db.collection("shortlinks").countDocuments({ owner: username });
+
+    const limits = {
+        free: 1,
+        pro: 3,
+        enterprise: Infinity,
+    };
+
+    const userLimit = limits[subscriptionType] ?? 1;
+
+    if (existingCount >= userLimit) {
+        return new Response(
+            JSON.stringify({ error: `You have reached your shortlink limit for your plan. Please upgrade your subscription to create more shortlinks.` }),
+            { status: 403 }
+        );
+    }
+
     if (subscriptionType === "free" && (allowedDevice || connectionType || allowedCountry || allowedIsp)) {
         return new Response(
             JSON.stringify({
@@ -48,11 +69,7 @@ export async function POST(req) {
         );
     }
 
-    const client = await clientPromise;
-    const db = client.db();
-
     const exists = await db.collection("shortlinks").findOne({ owner: username, key });
-
     if (exists) {
         return new Response(JSON.stringify({ error: "Key already exists" }), { status: 409 });
     }
