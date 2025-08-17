@@ -1,8 +1,8 @@
 import React from "react";
-import GreetingsPageContents from "@/app/nulledbot/contents/greetingsContents";
+import HomePageContents from "./nulledbot/contents/homePageContents";
 export const metadata = {
     title: "NulledBot | Advanced Web Security & Bot Protection",
 };
 export default function GreetingsPage() {
-    return (<GreetingsPageContents />);
+    return (<HomePageContents />);
 }

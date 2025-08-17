@@ -80,12 +80,12 @@ export default function EditModal({
 	const subType = subscriptionType;
 
 	return (
-		<div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+		<div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex p-4">
 			<motion.div
 				initial={{ y: -50, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
 				exit={{ y: -50, opacity: 0 }}
-				className="bg-gradient-to-br from-black/30 to-red-700/50 border border-white rounded-lg text-white w-full max-w-4xl p-6"
+				className="bg-gradient-to-br from-black/30 to-red-700/50 border border-white rounded-lg scroll text-white w-full max-w-4xl p-6"
 			>
 				<h3 className="text-xl font-bold mb-6">
 					Edit Shortlink :{" "}

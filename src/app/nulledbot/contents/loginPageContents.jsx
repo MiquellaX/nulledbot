@@ -58,7 +58,7 @@ export default function LoginPageContents() {
 			setError(errorMessages[response.error] || response.error);
 			return;
 		}
-		router.push("/nulledbot/dashboard");
+		router.push("/nulledbot/greetings");
 	};
 
 	return (
@@ -77,7 +77,7 @@ export default function LoginPageContents() {
 					>
 						<div className="flex items-center justify-between">
 							<h2 className="text-2xl mb-4">Login</h2>
-							<p onClick={() => router.push("/nulledbot/home")}>
+							<p onClick={() => router.push("/")}>
 								<RogIconHome className="w-10 mb-5 cursor-pointer" />
 							</p>
 						</div>

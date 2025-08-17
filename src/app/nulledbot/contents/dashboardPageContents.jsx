@@ -7,13 +7,22 @@ import Loading from "@/app/loading";
 import { RogIcon } from "../icons/nulledbotIcons";
 import ShortlinkTab from "./tabs/shortlink";
 import AccountTab from "./tabs/account";
+import TutorialTab from "./tabs/tutorial";
+import {
+	Sheet,
+	SheetContent,
+	SheetTrigger,
+	SheetClose,
+	SheetTitle,
+	SheetDescription,
+} from "@/components/ui/sheet";
 
 const navItems = [
+	{ name: "Account", href: "/nulledbot/dashboard?tab=account" },
 	{ name: "Shortlink & Blocker", href: "/nulledbot/dashboard?tab=shortlink" },
 	{ name: "Tutorial", href: "/nulledbot/dashboard?tab=tutorial" },
 	{ name: "Customization", href: "/nulledbot/dashboard?tab=customization" },
 	{ name: "IP Management", href: "/nulledbot/dashboard?tab=ip_management" },
-	{ name: "Account", href: "/nulledbot/dashboard?tab=account" },
 	{ name: "Subscription", href: "/nulledbot/dashboard?tab=subscription" },
 ];
 
@@ -25,9 +34,10 @@ export default function DashboardPageContents() {
 	const { data: session, status } = useSession();
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const tab = searchParams.get("tab") || "shortlink";
+	const tab = searchParams.get("tab") || "account";
 
 	const [shortlinks, setShortlinks] = useState([]);
+	const [loadingShortlinks, setLoadingShortlinks] = useState(true);
 	const [form, setForm] = useState({
 		url: "",
 		secondaryUrl: "",
@@ -39,7 +49,6 @@ export default function DashboardPageContents() {
 		allowedIsp: "",
 	});
 	const [formError, setFormError] = useState("");
-	const [navBar, setNavbar] = useState(false);
 	const [editModal, setEditModal] = useState({
 		open: false,
 		data: null,
@@ -50,11 +59,18 @@ export default function DashboardPageContents() {
 	useEffect(() => {
 		async function fetchShortlinks() {
 			if (tab === "shortlink" && status === "authenticated") {
-				const res = await fetch("/api/shortlinks", {
-					credentials: "include",
-				});
-				const data = await res.json();
-				setShortlinks(Array.isArray(data) ? data : []);
+				setLoadingShortlinks(true);
+				try {
+					const res = await fetch("/api/shortlinks", {
+						credentials: "include",
+					});
+					const data = await res.json();
+					setShortlinks(Array.isArray(data) ? data : []);
+				} catch (err) {
+					setShortlinks([]);
+				} finally {
+					setLoadingShortlinks(false);
+				}
 			}
 		}
 		fetchShortlinks();
@@ -160,6 +176,7 @@ export default function DashboardPageContents() {
 					setFormError={setFormError}
 					shortlinks={shortlinks}
 					setShortlinks={setShortlinks}
+					loadingShortlinks={loadingShortlinks}
 					visitorsModal={visitorsModal}
 					setVisitorsModal={setVisitorsModal}
 					editModal={editModal}
@@ -170,6 +187,16 @@ export default function DashboardPageContents() {
 		} else if (tab === "account") {
 			return (
 				<AccountTab
+					tab={tab}
+					session={session}
+					openApiKey={openApiKey}
+					setOpenApiKey={setOpenApiKey}
+					subscriptionType={subscriptionType}
+				/>
+			);
+		} else if (tab === "tutorial") {
+			return (
+				<TutorialTab
 					tab={tab}
 					session={session}
 					openApiKey={openApiKey}
@@ -188,45 +215,6 @@ export default function DashboardPageContents() {
 
 	return (
 		<div className="flex min-h-screen overflow-hidden">
-			<AnimatePresence mode="wait">
-				{navBar && (
-					<motion.aside
-						initial={{ width: 0 }}
-						animate={{ width: 256 }}
-						exit={{ width: 0 }}
-						transition={{ duration: 0.1, ease: "easeInOut" }}
-						className="overflow-hidden bg-black text-white p-4 border-r border-white"
-					>
-						<div className="flex justify-between items-center mb-10">
-							<h1 className="text-xl">NulledBot</h1>
-							<RogIcon
-								setNavbar={setNavbar}
-								className="mb-3 w-10 animate-pulse max-w-max"
-							/>
-						</div>
-						<nav className="flex-1">
-							<ul>
-								{navItems.map((item) => {
-									const isActive = tab === item.href.split("=")[1];
-									return (
-										<li
-											key={item.name}
-											className={`transition duration-300 p-2 cursor-pointer ${
-												isActive
-													? "text-red-700 font-bold px-5"
-													: "hover:text-blue-700"
-											}`}
-										>
-											<p onClick={() => router.push(item.href)}>{item.name}</p>
-										</li>
-									);
-								})}
-							</ul>
-						</nav>
-					</motion.aside>
-				)}
-			</AnimatePresence>
-
 			<motion.main
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
@@ -241,10 +229,44 @@ export default function DashboardPageContents() {
 					transition={{ duration: 0.2 }}
 					className={`flex flex-col md:flex-row lg:flex-row xl:flex-row items-center justify-between py-5`}
 				>
-					<RogIcon
-						setNavbar={setNavbar}
-						className={`w-10 max-w-max ${navBar ? "opacity-0" : ""}`}
-					/>
+					<Sheet>
+						<SheetTrigger asChild>
+							<p>
+								<RogIcon className="w-10 max-w-max cursor-pointer" />
+							</p>
+						</SheetTrigger>
+						<SheetContent
+							side="left"
+							className="bg-gradient-to-br from-black to-red-900/90 text-white ring-r-1 w-full md:w-82 lg:w-82 xl:w-82 p-4 "
+						>
+							<SheetTitle className={"text-xl"}>NulledBot</SheetTitle>
+							<SheetDescription className={"text-base font-semibold"}>
+								<span className="flex-1">
+									<span>
+										{navItems.map((item) => {
+											const isActive = tab === item.href.split("=")[1];
+											return (
+												<li
+													key={item.name}
+													className={`transition duration-300 p-2 cursor-pointer ${
+														isActive
+															? "text-red-700 font-bold px-5"
+															: "hover:text-blue-700"
+													}`}
+												>
+													<SheetClose asChild>
+														<span onClick={() => router.push(item.href)}>
+															{item.name}
+														</span>
+													</SheetClose>
+												</li>
+											);
+										})}
+									</span>
+								</span>
+							</SheetDescription>
+						</SheetContent>
+					</Sheet>
 					<div>
 						{subscriptionLoading ? (
 							<svg

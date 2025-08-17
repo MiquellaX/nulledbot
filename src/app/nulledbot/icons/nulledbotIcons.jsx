@@ -69,10 +69,9 @@ function ViewIcon({ className = "" }) {
 	);
 }
 
-function RogIcon({ className = "", setNavbar }) {
+function RogIcon({ className = "" }) {
 	return (
 		<svg
-			onClick={() => setNavbar((prev) => !prev)}
 			className={`hover:scale-120 transition duration-300 cursor-pointer ${className}`}
 			viewBox="-5.3 -1792.9 8666.25 8666.25"
 			clipRule="evenodd"

@@ -7,6 +7,12 @@ import { confirmToast } from "@/lib/confirmToast";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import Loading from "./loading";
+import {
+	Accordion,
+	AccordionItem,
+	AccordionTrigger,
+	AccordionContent,
+} from "@/components/ui/accordion";
 
 const CACHE_KEY = "statusCache";
 const CACHE_DURATION = 3 * 60 * 1000;
@@ -30,6 +36,7 @@ export default function ShortlinkTab({
 	setFormError,
 	shortlinks,
 	setShortlinks,
+	loadingShortlinks,
 	visitorsModal,
 	setVisitorsModal,
 	editModal,
@@ -557,271 +564,310 @@ export default function ShortlinkTab({
 				</div>
 			</form>
 
-			{shortlinks.length > 0 ? (
-				<div className="grid grid-cols-1 gap-2 rounded-lg">
-					{shortlinks.map((sl) => {
-						const isLoading = loadingKeys[sl.key];
-						const liveData = liveStatuses[sl.key];
+			{loadingShortlinks ? (
+				<div className="ring-1 py-3">
+					<Loading className="w-7 h-7 mx-auto" />
+				</div>
+			) : shortlinks.length > 0 ? (
+				<Accordion type="single" collapsible>
+					<AccordionItem value="apikey" className={"w-full"}>
+						<AccordionTrigger className="cursor-pointer flex justify-center w-max ring-1 font-semibold">
+							<p className="flex gap-2">
+								TOTAL SHORTLINKS (
+								<span className="text-amber-500">{shortlinks.length}</span>)
+							</p>
+						</AccordionTrigger>
+						<AccordionContent className={'border p-2 rounded-lg bg-white/10'}>
+							<div className="grid grid-cols-1 gap-1 rounded-lg">
+								{shortlinks.map((sl) => {
+									const isLoading = loadingKeys[sl.key];
+									const liveData = liveStatuses[sl.key];
 
-						let displayStatus = "WAIT";
-						let displayUrl = null;
+									let displayStatus = "WAIT";
+									let displayUrl = null;
 
-						if (isLoading) {
-							displayStatus = "loading";
-						} else if (liveData) {
-							if (liveData.status === "LIVE") {
-								displayStatus = "LIVE";
-								displayUrl =
-									liveData.source === "secondary" ? sl.secondaryUrl : sl.url;
-							} else if (liveData.status === "NEED UPDATE!") {
-								displayStatus = "NEED UPDATE!";
-								displayUrl = "NEED UPDATE!";
-							} else {
-								displayStatus = "CLEAR STATUS CACHE!";
-								displayUrl = "CLEAR STATUS CACHE!";
-							}
-						} else {
-							const primary = sl.primaryUrlStatus;
-							const secondary = sl.secondaryUrlStatus;
+									if (isLoading) {
+										displayStatus = "loading";
+									} else if (liveData) {
+										if (liveData.status === "LIVE") {
+											displayStatus = "LIVE";
+											displayUrl =
+												liveData.source === "secondary"
+													? sl.secondaryUrl
+													: sl.url;
+										} else if (liveData.status === "NEED UPDATE!") {
+											displayStatus = "NEED UPDATE!";
+											displayUrl = "NEED UPDATE!";
+										} else {
+											displayStatus = "CLEAR STATUS CACHE!";
+											displayUrl = "CLEAR STATUS CACHE!";
+										}
+									} else {
+										const primary = sl.primaryUrlStatus;
+										const secondary = sl.secondaryUrlStatus;
 
-							if (primary === "LIVE") {
-								displayStatus = "LIVE";
-								displayUrl = sl.url;
-							} else if (secondary === "LIVE") {
-								displayStatus = "LIVE";
-								displayUrl = sl.secondaryUrl;
-							} else if (
-								(primary === "DEAD" || primary === "RED FLAG") &&
-								(secondary === "DEAD" || secondary === "RED FLAG")
-							) {
-								displayStatus = "NEED UPDATE!";
-								displayUrl = "NEED UPDATE!";
-							} else {
-								displayStatus = primary || secondary || "WAIT";
-								displayUrl = sl.url;
-							}
-						}
+										if (primary === "LIVE") {
+											displayStatus = "LIVE";
+											displayUrl = sl.url;
+										} else if (secondary === "LIVE") {
+											displayStatus = "LIVE";
+											displayUrl = sl.secondaryUrl;
+										} else if (
+											(primary === "DEAD" || primary === "RED FLAG") &&
+											(secondary === "DEAD" || secondary === "RED FLAG")
+										) {
+											displayStatus = "NEED UPDATE!";
+											displayUrl = "NEED UPDATE!";
+										} else {
+											displayStatus = primary || secondary || "WAIT";
+											displayUrl = sl.url;
+										}
+									}
 
-						return (
-							<div
-								key={sl.key}
-								className="ring-1 hover:ring-green-700 bg-black/70 rounded-lg shadow-md p-4 transition cursor-default"
-							>
-								<div className="flex flex-col md:flex-row lg:flex-row xl:flex-row flex-wrap justify-between text-xs md:text-sm gap-y-2">
-									<div className="flex flex-col gap-0 md:gap-2">
-										<span className="text-white">Owner</span>
-										<span className="text-amber-400 font-semibold">
-											{sl.owner.toUpperCase()}
-										</span>
-									</div>
-
-									<div className="flex flex-col gap-0 md:gap-2">
-										<span className="text-white">Created</span>
-										<span className="text-green-400 font-semibold">
-											{new Date(sl.createdAt).toLocaleTimeString("en-US", {
-												hour: "2-digit",
-												minute: "2-digit",
-												hour12: true,
-												timeZone: "Asia/Jakarta",
-											})}
-										</span>
-									</div>
-
-									<div className="flex flex-col gap-0 md:gap-2">
-										<span className="text-white">Updated</span>
-										<span
-											className={
-												sl.updatedAt === sl.createdAt
-													? "text-red-700 font-semibold"
-													: "text-amber-500 font-semibold"
-											}
+									return (
+										<div
+											key={sl.key}
+											className="bg-black rounded-lg shadow-md p-4 transition cursor-default hover:bg-black/70"
 										>
-											{sl.updatedAt === sl.createdAt
-												? "NO UPDATE YET"
-												: new Date(sl.updatedAt).toLocaleTimeString("en-US", {
-														hour: "2-digit",
-														minute: "2-digit",
-														hour12: true,
-														timeZone: "Asia/Jakarta",
-												  })}
-										</span>
-									</div>
-
-									<div className="flex flex-col text-xs md:text-sm">
-										<div className="flex flex-col gap-0 md:gap-2 w-full break-words">
-											<span className="text-white">URL</span>
-											<span className="text-blue-400 font-semibold flex items-center gap-1">
-												{isLoading ? (
-													<span className="font-bold rounded-full px-2 py-1 w-max h-max text-xs text-gray-400 ring-1 ring-gray-500 bg-gray-600/10">
-														<Loading className={"w-[33px] h-4"} />
+											<div className="flex flex-col md:flex-row lg:flex-row xl:flex-row flex-wrap justify-between text-xs md:text-sm gap-y-2">
+												<div className="flex flex-col gap-0 md:gap-2">
+													<span className="text-white">Owner</span>
+													<span className="text-amber-400 font-semibold">
+														{sl.owner.toUpperCase()}
 													</span>
-												) : (
+												</div>
+
+												<div className="flex flex-col gap-0 md:gap-2">
+													<span className="text-white">Created</span>
+													<span className="text-green-400 font-semibold">
+														{new Date(sl.createdAt).toLocaleTimeString(
+															"en-US",
+															{
+																hour: "2-digit",
+																minute: "2-digit",
+																hour12: true,
+																timeZone: "Asia/Jakarta",
+															}
+														)}
+													</span>
+												</div>
+
+												<div className="flex flex-col gap-0 md:gap-2">
+													<span className="text-white">Updated</span>
 													<span
-														className={`truncate ${
-															displayUrl === "CLEAR STATUS CACHE!"
-																? "font-bold rounded-full px-2 py-1 w-max h-max text-xs text-red-700 ring-1 ring-white bg-gray-600/10"
-																: ""
-														} ${
-															displayUrl === "NEED UPDATE!"
-																? "font-bold rounded-full px-2 py-1 w-max h-max text-xs text-red-700 ring-1 ring-red-700 bg-orange-600/10"
-																: ""
-														}`}
+														className={
+															sl.updatedAt === sl.createdAt
+																? "text-red-700 font-semibold"
+																: "text-amber-500 font-semibold"
+														}
 													>
-														{displayUrl}
-													</span>
-												)}
-											</span>
-										</div>
-									</div>
-
-									<div className="flex flex-col text-xs md:text-sm">
-										<div className="flex flex-col gap-0 md:gap-2">
-											<span className="text-white">Key</span>
-											<span className="text-cyan-400 font-semibold">
-												{sl.key}
-											</span>
-										</div>
-									</div>
-
-									<div className="flex flex-col text-xs md:text-sm">
-										<div className="flex flex-col gap-0 md:gap-2 w-full break-words">
-											<span className="text-white">Status</span>
-											<span
-												className={`font-bold rounded-full px-2 py-1 w-max h-max text-xs ${
-													isLoading
-														? "text-gray-400 ring-1 ring-gray-500 bg-gray-600/10"
-														: displayStatus === "LIVE"
-														? "text-green-600 ring-1 ring-green-500 bg-green-600/10"
-														: displayStatus === "DEAD"
-														? "text-yellow-600 ring-1 ring-yellow-500 bg-yellow-600/10"
-														: displayStatus === "RED FLAG"
-														? "text-red-600 ring-1 ring-red-500 bg-red-600/10"
-														: displayStatus === "NEED UPDATE!"
-														? "text-red-700 ring-1 ring-red-700 bg-orange-600/10"
-														: "text-red-700 ring-1 ring-white bg-gray-600/10"
-												}`}
-											>
-												{isLoading ? (
-													<Loading className={"w-[33px] h-4"} />
-												) : displayStatus === "RED FLAG" ? (
-													"RF"
-												) : (
-													displayStatus
-												)}
-											</span>
-										</div>
-									</div>
-
-									<div className="flex flex-col text-xs md:text-sm">
-										<div className="flex flex-col gap-0 md:gap-2 w-full">
-											<span className="text-white">Actions</span>
-											<div className="flex gap-4 mt-1">
-												<button
-													onClick={() =>
-														setEditModal({
-															open: true,
-															data: { ...sl, originalKey: sl.key },
-															loading: false,
-															error: "",
-														})
-													}
-													title="Edit Shortlink"
-													className="text-yellow-400 hover:text-yellow-300 transition"
-												>
-													<FaCogs className="setting-icon" />
-												</button>
-												<button
-													onClick={() =>
-														manualCheckUrl(sl.url, sl.key, sl.secondaryUrl)
-													}
-													title="Check URL"
-													className="text-yellow-400 hover:text-yellow-300 transition"
-												>
-													<FaReact className="check-icon" />
-												</button>
-												<button
-													onClick={() => {
-														clearStatusCacheForKey(sl.key);
-														setLiveStatuses((prev) => {
-															const updated = { ...prev };
-															delete updated[sl.key];
-															return updated;
-														});
-														toast.success(
-															`Status cache cleared for "${sl.key}".`
-														);
-													}}
-													title="Clear Status Cache for This Shortlink"
-													className="text-yellow-400 hover:text-yellow-300 transition"
-												>
-													<FaCode className="cache-icon" />
-												</button>
-
-												<button
-													onClick={() =>
-														setVisitorsModal({
-															open: true,
-															data: { ...sl, originalKey: sl.key },
-														})
-													}
-													title="View Visitors"
-													className="text-blue-400 hover:text-blue-300 transition"
-												>
-													<FaEye className="view-icon" />
-												</button>
-												<button
-													onClick={() => {
-														confirmToast({
-															message: `Delete shortlink: "${sl.url}"?`,
-															onConfirm: async () => {
-																toast.promise(
-																	(async () => {
-																		const res = await fetch("/api/shortlinks", {
-																			method: "DELETE",
-																			credentials: "include",
-																			headers: {
-																				"Content-Type": "application/json",
-																			},
-																			body: JSON.stringify({ key: sl.key }),
-																		});
-																		const data = await res.json();
-																		if (!res.ok || !data.success) {
-																			throw new Error(
-																				data.error || "Failed to delete"
-																			);
-																		}
-																		setShortlinks(
-																			shortlinks.filter((s) => s.key !== sl.key)
-																		);
-																		return "Deleted";
-																	})(),
+														{sl.updatedAt === sl.createdAt
+															? "NO UPDATE YET"
+															: new Date(sl.updatedAt).toLocaleTimeString(
+																	"en-US",
 																	{
-																		loading: "Deleting...",
-																		success: `Shortlink "${sl.url}" deleted.`,
-																		error: (err) => `Failed: ${err.message}`,
+																		hour: "2-digit",
+																		minute: "2-digit",
+																		hour12: true,
+																		timeZone: "Asia/Jakarta",
 																	}
-																);
-															},
-															onCancel: () => {
-																toast("Deletion cancelled.");
-															},
-														});
-													}}
-													title="Delete Shortlink"
-													className="text-red-400 hover:text-red-300 transition"
-												>
-													<FaTrash className="delete-icon" />
-												</button>
+															  )}
+													</span>
+												</div>
+
+												<div className="flex flex-col text-xs md:text-sm">
+													<div className="flex flex-col gap-0 md:gap-2 w-full break-words">
+														<span className="text-white">URL</span>
+														<span className="text-blue-400 font-semibold flex items-center gap-1">
+															{isLoading ? (
+																<span className="font-bold rounded-full px-2 py-1 w-max h-max text-xs text-gray-400 ring-1 ring-gray-500 bg-gray-600/10">
+																	<Loading className={"w-[33px] h-4"} />
+																</span>
+															) : (
+																<span
+																	className={`truncate ${
+																		displayUrl === "CLEAR STATUS CACHE!"
+																			? "font-bold rounded-full px-2 py-1 w-max h-max text-xs text-red-700 ring-1 ring-white bg-gray-600/10"
+																			: ""
+																	} ${
+																		displayUrl === "NEED UPDATE!"
+																			? "font-bold rounded-full px-2 py-1 w-max h-max text-xs text-red-700 ring-1 ring-red-700 bg-orange-600/10"
+																			: ""
+																	}`}
+																>
+																	{displayUrl}
+																</span>
+															)}
+														</span>
+													</div>
+												</div>
+
+												<div className="flex flex-col text-xs md:text-sm">
+													<div className="flex flex-col gap-0 md:gap-2">
+														<span className="text-white">Key</span>
+														<span className="text-cyan-400 font-semibold">
+															{sl.key}
+														</span>
+													</div>
+												</div>
+
+												<div className="flex flex-col text-xs md:text-sm">
+													<div className="flex flex-col gap-0 md:gap-2 w-full break-words">
+														<span className="text-white">Status</span>
+														<span
+															className={`font-bold rounded-full px-2 py-1 w-max h-max text-xs ${
+																isLoading
+																	? "text-gray-400 ring-1 ring-gray-500 bg-gray-600/10"
+																	: displayStatus === "LIVE"
+																	? "text-green-600 ring-1 ring-green-500 bg-green-600/10"
+																	: displayStatus === "DEAD"
+																	? "text-yellow-600 ring-1 ring-yellow-500 bg-yellow-600/10"
+																	: displayStatus === "RED FLAG"
+																	? "text-red-600 ring-1 ring-red-500 bg-red-600/10"
+																	: displayStatus === "NEED UPDATE!"
+																	? "text-red-700 ring-1 ring-red-700 bg-orange-600/10"
+																	: "text-red-700 ring-1 ring-white bg-gray-600/10"
+															}`}
+														>
+															{isLoading ? (
+																<Loading className={"w-[33px] h-4"} />
+															) : displayStatus === "RED FLAG" ? (
+																"RF"
+															) : (
+																displayStatus
+															)}
+														</span>
+													</div>
+												</div>
+
+												<div className="flex flex-col text-xs md:text-sm">
+													<div className="flex flex-col gap-0 md:gap-2 w-full">
+														<span className="text-white">Actions</span>
+														<div className="flex gap-4 mt-1">
+															<button
+																onClick={() =>
+																	setEditModal({
+																		open: true,
+																		data: { ...sl, originalKey: sl.key },
+																		loading: false,
+																		error: "",
+																	})
+																}
+																title="Edit Shortlink"
+																className="text-yellow-400 hover:text-yellow-300 transition"
+															>
+																<FaCogs className="setting-icon" />
+															</button>
+															<button
+																onClick={() =>
+																	manualCheckUrl(
+																		sl.url,
+																		sl.key,
+																		sl.secondaryUrl
+																	)
+																}
+																title="Check URL"
+																className="text-yellow-400 hover:text-yellow-300 transition"
+															>
+																<FaReact className="check-icon" />
+															</button>
+															<button
+																onClick={() => {
+																	clearStatusCacheForKey(sl.key);
+																	setLiveStatuses((prev) => {
+																		const updated = { ...prev };
+																		delete updated[sl.key];
+																		return updated;
+																	});
+																	toast.success(
+																		`Status cache cleared for "${sl.key}".`
+																	);
+																}}
+																title="Clear Status Cache for This Shortlink"
+																className="text-yellow-400 hover:text-yellow-300 transition"
+															>
+																<FaCode className="cache-icon" />
+															</button>
+
+															<button
+																onClick={() =>
+																	setVisitorsModal({
+																		open: true,
+																		data: { ...sl, originalKey: sl.key },
+																	})
+																}
+																title="View Visitors"
+																className="text-blue-400 hover:text-blue-300 transition"
+															>
+																<FaEye className="view-icon" />
+															</button>
+															<button
+																onClick={() => {
+																	confirmToast({
+																		message: `Delete shortlink: "${sl.url}"?`,
+																		onConfirm: async () => {
+																			toast.promise(
+																				(async () => {
+																					const res = await fetch(
+																						"/api/shortlinks",
+																						{
+																							method: "DELETE",
+																							credentials: "include",
+																							headers: {
+																								"Content-Type":
+																									"application/json",
+																							},
+																							body: JSON.stringify({
+																								key: sl.key,
+																							}),
+																						}
+																					);
+																					const data = await res.json();
+																					if (!res.ok || !data.success) {
+																						throw new Error(
+																							data.error || "Failed to delete"
+																						);
+																					}
+																					setShortlinks(
+																						shortlinks.filter(
+																							(s) => s.key !== sl.key
+																						)
+																					);
+																					return "Deleted";
+																				})(),
+																				{
+																					loading: "Deleting...",
+																					success: `Shortlink "${sl.url}" deleted.`,
+																					error: (err) =>
+																						`Failed: ${err.message}`,
+																				}
+																			);
+																		},
+																		onCancel: () => {
+																			toast("Deletion cancelled.");
+																		},
+																	});
+																}}
+																title="Delete Shortlink"
+																className="text-red-400 hover:text-red-300 transition"
+															>
+																<FaTrash className="delete-icon" />
+															</button>
+														</div>
+													</div>
+												</div>
 											</div>
 										</div>
-									</div>
-								</div>
+									);
+								})}
 							</div>
-						);
-					})}
-				</div>
+						</AccordionContent>
+					</AccordionItem>
+				</Accordion>
 			) : (
-				<div className="text-center text-white mt-4">NO SHORTLINKS YET</div>
+				<div className="text-center text-white mt-4 ring-1 py-3 w-full">
+					<p>NO SHORTLINKS YET</p>
+				</div>
 			)}
 
 			<AnimatePresence>

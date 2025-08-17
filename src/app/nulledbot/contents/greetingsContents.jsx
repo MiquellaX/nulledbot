@@ -44,7 +44,7 @@ const GreetingsPageContents = ({ message = "Welcome To " }) => {
 	}, []);
 
 	setTimeout(() => {
-		window.location.href = `${window.location.origin}/nulledbot/home`;
+		window.location.href = `${window.location.origin}/nulledbot/dashboard`;
 	}, 5000);
 
 	return (

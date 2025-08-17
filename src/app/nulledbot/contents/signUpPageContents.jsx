@@ -55,7 +55,7 @@ export default function SignupPageContents() {
 					>
 						<div className="flex items-center justify-between">
 							<h2 className="text-2xl mb-4">Sign Up</h2>
-							<p onClick={() => router.push("/nulledbot/home")}>
+							<p onClick={() => router.push("/")}>
 								<RogIconHome className="w-10 mb-5" />
 							</p>
 						</div>

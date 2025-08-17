@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Loading from "./tabs/loading";
 
 export default function ApiKeySection({ username }) {
 	const [apiKey, setApiKey] = useState("");
@@ -61,46 +62,11 @@ export default function ApiKeySection({ username }) {
 				title="Click to copy"
 				className="font-mono border text-green-600 px-3 rounded cursor-pointer transition animate-pulse"
 			>
-				{loading ? (
-					<svg
-						className="w-6 h-6 fill-white"
-						viewBox="0 0 24 24"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<circle cx="4" cy="12" r="3">
-							<animate
-								id="spinner_jObz"
-								begin="0;spinner_vwSQ.end-0.25s"
-								attributeName="r"
-								dur="0.75s"
-								values="3;.2;3"
-							/>
-						</circle>
-						<circle cx="12" cy="12" r="3">
-							<animate
-								begin="spinner_jObz.end-0.6s"
-								attributeName="r"
-								dur="0.75s"
-								values="3;.2;3"
-							/>
-						</circle>
-						<circle cx="20" cy="12" r="3">
-							<animate
-								id="spinner_vwSQ"
-								begin="spinner_jObz.end-0.45s"
-								attributeName="r"
-								dur="0.75s"
-								values="3;.2;3"
-							/>
-						</circle>
-					</svg>
-				) : (
-					apiKey || "NO API KEY"
-				)}
+				{loading ? <Loading className={"w-5 h-5"} /> : apiKey || "NO API KEY"}
 			</span>
 
 			<button
-				className="bg-red-700 text-white h-7 px-2 rounded hover:ring-2 hover:ring-amber-500 transition duration-300 cursor-pointer"
+				className="font-normal bg-black/80 text-white h-7 px-2 rounded hover:ring-2 hover:ring-amber-500 transition duration-300 cursor-pointer"
 				onClick={regenerateApiKey}
 				disabled={loading || !username}
 			>
