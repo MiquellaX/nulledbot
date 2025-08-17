@@ -52,7 +52,7 @@ NulledBot is a bot-protection API for shortlinks and gated flows. It detects and
   - Advanced bot protection
   - Geo/IP filtering
   - Analytics dashboard
-  - Up to 15 shortlinks creation
+  - Up to 5 shortlinks creation
 - **Enterprise** – \$99
   - Custom rules
   - Priority support
@@ -130,7 +130,7 @@ if ($body['allow']) {
 
 ## API Reference
 
-### `/api/check`
+### `/api/v1/nulledbot/[yourshortlinkkey]`
 
 **Method:** `GET` or `POST`\
 **Auth:** Header `x-api-key: <key>`\

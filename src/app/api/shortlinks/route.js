@@ -38,8 +38,6 @@ export async function POST(req) {
 
     const username = session.user.username;
     const subscriptionType = await getSubscriptionType(username);
-
-    // 👉 Shortlink creation limit enforcement
     const client = await clientPromise;
     const db = client.db();
 
@@ -60,10 +58,10 @@ export async function POST(req) {
         );
     }
 
-    if (subscriptionType === "free" && (allowedDevice || connectionType || allowedCountry || allowedIsp)) {
+    if (subscriptionType === "free" && (allowedDevice || connectionType || allowedCountry || allowedIsp || secondaryUrl)) {
         return new Response(
             JSON.stringify({
-                error: "Free users cannot use advanced filters (device, ISP, country, or connection type)",
+                error: "Free users cannot use advanced filters.",
             }),
             { status: 403 }
         );
@@ -95,6 +93,7 @@ export async function POST(req) {
         doc.connectionType = connectionType;
         doc.allowedCountry = allowedCountry;
         doc.allowedIsp = allowedIsp;
+        doc.secondaryUrl = secondaryUrl;
     }
 
     await db.collection("shortlinks").insertOne(doc);
@@ -143,7 +142,6 @@ export async function PUT(req) {
     const updateFields = {
         key,
         url,
-        secondaryUrl: secondaryUrl || null,
         primaryUrlStatus,
         secondaryUrlStatus,
         statusCode,
@@ -155,6 +153,16 @@ export async function PUT(req) {
         if (connectionType !== undefined) updateFields.connectionType = connectionType;
         if (allowedCountry !== undefined) updateFields.allowedCountry = allowedCountry;
         if (allowedIsp !== undefined) updateFields.allowedIsp = allowedIsp;
+        if (secondaryUrl !== undefined) updateFields.secondaryUrl = secondaryUrl || null;
+    }
+
+    if (subscriptionType === "free" && (allowedDevice || connectionType || allowedCountry || allowedIsp || secondaryUrl)) {
+        return new Response(
+            JSON.stringify({
+                error: "Free users cannot use advanced filters.",
+            }),
+            { status: 403 }
+        );
     }
 
     const result = await db.collection("shortlinks").updateOne(

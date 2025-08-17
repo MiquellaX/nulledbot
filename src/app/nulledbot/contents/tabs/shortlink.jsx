@@ -451,16 +451,20 @@ export default function ShortlinkTab({
 							type={type}
 							required={required}
 							placeholder={
-								subType === "free" && name === "allowedIsp"
+								subType === "free" &&
+								(name === "allowedIsp" || name === "secondaryUrl")
 									? "Unavailable for Free Users"
 									: placeholder
 							}
-							className={`w-full p-2 border rounded-lg bg-black text-white disabled:text-red-700 placeholder:text-xs`}
+							className={`w-full p-2 border rounded-lg bg-black text-white disabled:text-red-700 placeholder:text-sm hover:placeholder:text-xs focus:placeholder:text-xs`}
 							value={form[name]}
 							onChange={(e) =>
 								setForm((f) => ({ ...f, [name]: e.target.value }))
 							}
-							disabled={subType === "free" && name === "allowedIsp"}
+							disabled={
+								subType === "free" &&
+								(name === "allowedIsp" || name === "secondaryUrl")
+							}
 						/>
 						{name === "key" && formError && (
 							<div className="text-red-700 mt-1">{formError}</div>
@@ -471,7 +475,7 @@ export default function ShortlinkTab({
 				<div className="mb-4">
 					<label className="block mb-1">Allowed Country</label>
 					<select
-						className="w-full p-[10px] border rounded-lg bg-black text-white disabled:text-red-700/50 disabled:border-red-700"
+						className="w-full p-[10px] border rounded-lg bg-black text-white disabled:text-red-700/50 disabled:border-red-700 text-sm"
 						value={form.allowedCountry}
 						onChange={(e) =>
 							setForm((f) => ({ ...f, allowedCountry: e.target.value }))
@@ -520,7 +524,7 @@ export default function ShortlinkTab({
 						<label className="block mb-1">{label}</label>
 						<select
 							required
-							className="w-full p-[10px] border rounded-lg h-10 bg-black disabled:text-red-700/50 disabled:border-red-700"
+							className="w-full p-[10px] border rounded-lg h-10 bg-black disabled:text-red-700/50 disabled:border-red-700 text-sm"
 							value={form[name]}
 							onChange={(e) =>
 								setForm((f) => ({ ...f, [name]: e.target.value }))

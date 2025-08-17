@@ -106,7 +106,8 @@ export default function EditModal({
 									type="text"
 									className="w-full p-2 bg-black border rounded disabled:text-red-700 disabled:placeholder:text-sm"
 									placeholder={
-										subType === "free" && name === "allowedIsp"
+										subType === "free" &&
+										(name === "allowedIsp" || name === "secondaryUrl")
 											? "Unavailable for Free Users"
 											: undefined
 									}
@@ -115,7 +116,10 @@ export default function EditModal({
 										setFormData((f) => ({ ...f, [name]: e.target.value }))
 									}
 									required={["url", "key"].includes(name)}
-									disabled={subType === "free" && name === "allowedIsp"}
+									disabled={
+										subType === "free" &&
+										(name === "allowedIsp" || name === "secondaryUrl")
+									}
 								/>
 							</div>
 						))}

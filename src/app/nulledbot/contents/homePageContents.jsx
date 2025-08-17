@@ -484,13 +484,17 @@ export default function HomePageContents() {
 								<>
 									Make a{" "}
 									<code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-sm">
-										/api/check
+										/api/v1/nulledbot/[yourshortlinkkey]
 									</code>{" "}
 									request with headers{" "}
 									<code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-sm">
 										x-api-key
 									</code>{" "}
-									and user IP.
+									and{" "}
+									<code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-sm ml-1">
+										x-visitor-ip-asli
+									</code>{" "}
+									.
 								</>
 							),
 						},
