@@ -16,7 +16,7 @@ export async function GET(request) {
             .collection("visitors")
             .find({ shortlinkKey: key })
             .sort({ visitedAt: -1 })
-            .limit(50)
+            .limit(1000)
             .toArray();
 
         return new Response(JSON.stringify({ visitors }), { status: 200 });

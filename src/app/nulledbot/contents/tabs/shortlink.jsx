@@ -334,6 +334,14 @@ export default function ShortlinkTab({
 		return () => clearInterval(interval);
 	}, [shortlinks, loadingKeys]);
 
+	const clearStatusCacheForKey = (key) => {
+		const cache = loadStatusCache();
+		if (cache[key]) {
+			delete cache[key];
+			saveStatusCache(cache);
+		}
+	};
+
 	return (
 		<motion.div
 			key="shortlink"
@@ -412,21 +420,20 @@ export default function ShortlinkTab({
 						label: "Main Site URL",
 						name: "url",
 						type: "url",
-						placeholder: "https://domain.com/?path",
+						placeholder: "e.g. https://domain.com/?path",
 						required: true,
 					},
 					{
 						label: "Secondary Site URL",
 						name: "secondaryUrl",
 						type: "url",
-						placeholder: "https://backupdomain.com/?path",
-						required: true,
+						placeholder: "This will be used if Main url is Red Flagged or Dead",
 					},
 					{
 						label: "Custom Key",
 						name: "key",
 						type: "text",
-						placeholder: "Enter custom key",
+						placeholder: "e.g. xk2j0",
 						required: true,
 					},
 					{
@@ -437,7 +444,9 @@ export default function ShortlinkTab({
 					},
 				].map(({ label, name, type, placeholder, required }) => (
 					<div className="mb-4" key={name}>
-						<label className="block mb-1">{label}</label>
+						<label htmlFor={name} className="block mb-1">
+							{label}
+						</label>
 						<input
 							type={type}
 							required={required}
@@ -446,7 +455,7 @@ export default function ShortlinkTab({
 									? "Unavailable for Free Users"
 									: placeholder
 							}
-							className={`w-full p-2 border rounded-lg bg-black text-white disabled:text-red-700`}
+							className={`w-full p-2 border rounded-lg bg-black text-white disabled:text-red-700 placeholder:text-xs`}
 							value={form[name]}
 							onChange={(e) =>
 								setForm((f) => ({ ...f, [name]: e.target.value }))
@@ -825,11 +834,17 @@ export default function ShortlinkTab({
 												</button>
 												<button
 													onClick={() => {
-														localStorage.removeItem("statusCache");
-														setLiveStatuses({});
-														toast.success("Status Cache Cleared.");
+														clearStatusCacheForKey(sl.key);
+														setLiveStatuses((prev) => {
+															const updated = { ...prev };
+															delete updated[sl.key];
+															return updated;
+														});
+														toast.success(
+															`Status cache cleared for "${sl.key}".`
+														);
 													}}
-													title="Clear Status Cache"
+													title="Clear Status Cache for This Shortlink"
 													className="text-yellow-400 hover:text-yellow-300 transition"
 												>
 													<FaCode className="cache-icon" />

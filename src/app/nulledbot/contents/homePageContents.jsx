@@ -6,6 +6,7 @@ import { RogIconHome } from "@/app/nulledbot/icons/nulledbotIcons";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import CustomerInfoModal from "@/app/nulledbot/contents/modal/customerDetails";
+import HomeFooter from "@/app/nulledbot/contents/homeFooter";
 
 export default function HomePageContents() {
 	const router = useRouter();
@@ -261,6 +262,7 @@ export default function HomePageContents() {
 						transition={{ type: "spring", stiffness: 120, damping: 20 }}
 					>
 						<button
+							aria-label="Go to home section"
 							onClick={() =>
 								homeRef.current?.scrollIntoView({ behavior: "smooth" })
 							}
@@ -335,7 +337,6 @@ export default function HomePageContents() {
 				</button>
 			</div>
 
-			{/* UTAMA */}
 			<section
 				ref={homeRef}
 				className="relative min-h-screen px-8 text-center max-w-4xl mx-auto flex flex-col justify-center"
@@ -360,7 +361,6 @@ export default function HomePageContents() {
 				</motion.p>
 			</section>
 
-			{/* FEATURES */}
 			<section
 				ref={howItWorksRef}
 				className="flex flex-col items-center justify-center min-h-screen px-8 max-w-5xl mx-auto"
@@ -396,7 +396,6 @@ export default function HomePageContents() {
 				</div>
 			</section>
 
-			{/* HARGA */}
 			<section
 				ref={pricingRef}
 				className="flex flex-col items-center justify-center min-h-screen px-8 max-w-6xl mx-auto text-center"
@@ -471,7 +470,6 @@ export default function HomePageContents() {
 				</div>
 			</section>
 
-			{/* CARA KERJA */}
 			<section
 				ref={moreInfoRef}
 				className="flex flex-col items-center justify-center min-h-screen px-8 max-w-5xl mx-auto text-left"
@@ -539,7 +537,6 @@ export default function HomePageContents() {
 				</div>
 			</section>
 
-			{/* FAQ */}
 			<section
 				ref={faqRef}
 				className="flex flex-col items-center justify-center min-h-screen px-8 max-w-4xl mx-auto"
@@ -563,12 +560,7 @@ export default function HomePageContents() {
 					))}
 				</div>
 			</section>
-
-			{/* FOOTER */}
-			<footer className="px-8 py-12 text-center text-sm text-white">
-				&copy; {new Date().getFullYear()} Nulled
-				<span className="text-red-700">Bot</span> Inc. All rights reserved.
-			</footer>
+			<HomeFooter homeRef={homeRef} />
 		</div>
 	);
 }

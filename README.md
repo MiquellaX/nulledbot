@@ -20,6 +20,7 @@
 - [Support](#support)
 - [Changelog](#changelog)
 - [License](#license)
+- [Nulledbot Website](#website)
 
 ---
 
@@ -36,7 +37,7 @@ NulledBot is a bot-protection API for shortlinks and gated flows. It detects and
 - **Geo & Device Rules** – Allow/block by country, device type, or ISP.
 - **Rate Limit Management** – Configure limits per key/route from the dashboard.
 - **Webhooks** – Receive real‑time events for allows/blocks.
-- **Custom Rules (Enterprise)** – Tailor filters, lists, and logic to your stack.
+- **Custom Rules (Enterprise)** – Tailor filters, lists, add whitelisted/blacklisted ips, logic to your stack and many more.
 
 ---
 
@@ -46,14 +47,16 @@ NulledBot is a bot-protection API for shortlinks and gated flows. It detects and
   - Basic bot filtering
   - Community support
   - Limited stats
+  - Limited shortlinks creation
 - **Pro** – \$29
   - Advanced bot protection
   - Geo/IP filtering
   - Analytics dashboard
+  - Up to 15 shortlinks creation
 - **Enterprise** – \$99
   - Custom rules
   - Priority support
-  - Unlimited shortlinks
+  - Unlimited shortlinks creation
 
 > Billing is available Weekly, Monthly, and Yearly.
 
@@ -71,27 +74,30 @@ Infrastructure runs on global edge networks for low‑latency detection and high
 
 1. **Create an account** and obtain an **API key**.
 2. **Call the check endpoint** before redirecting users to your destination link.
-3. **Allow or block** based on the response (e.g., `allow: true/false`).
+3. **Allow or block** based on the response (e.g., `bot/vpn/proxy/human`).
 
 ### Minimal cURL
 
 ```bash
 curl -i \
   -H "x-api-key: <YOUR_API_KEY>" \
-  -H "X-Forwarded-For: <END_USER_IP>" \
-  "https://<YOUR-BASE-URL>/api/check"
+  -H "x-visitor-ip-asli: <CLIENT_IP>" \
+  "https://nulledbot.shop/api/v1/nulledbot/[yourshortlinkkey]"
 ```
 
 ### Node.js (fetch)
 
 ```js
-const res = await fetch("https://<YOUR-BASE-URL>/api/check", {
-	headers: {
-		"x-api-key": process.env.NULLEDBOT_API_KEY,
-		// If you sit behind a proxy/load balancer, forward the real client IP
-		"X-Forwarded-For": clientIp,
-	},
-});
+const res = await fetch(
+	"https://nulledbot.shop/api/v1/nulledbot/[yourshortlinkkey]",
+	{
+		headers: {
+			"x-api-key": process.env.NULLEDBOT_API_KEY,
+			// If you sit behind a proxy/load balancer, forward the real client IP
+			"x-visitor-ip-asli": clientIp,
+		},
+	}
+);
 const verdict = await res.json();
 if (verdict.allow) {
 	// proceed with redirect
@@ -103,10 +109,10 @@ if (verdict.allow) {
 ### PHP
 
 ```php
-$ch = curl_init("https://<YOUR-BASE-URL>/api/check");
+$ch = curl_init("https://nulledbot.shop/api/v1/nulledbot/[yourshortlinkkey]");
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
-  "x-api-key: {$_ENV['NULLEDBOT_API_KEY']}",
-  "X-Forwarded-For: $clientIp"
+  "x-api-key: $yournulledbotapikey",
+  "x-visitor-ip-asli: $clientIp"
 ]);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 $response = curl_exec($ch);
@@ -118,7 +124,7 @@ if ($body['allow']) {
 }
 ```
 
-> **Note**: If your integration runs at the edge or the origin with direct client access, you can omit `X-Forwarded-For`. The service will use the request IP.
+> **Note**: If your integration runs at the edge or the origin with direct client access, you can omit `x-visitor-ip-asli`. The service will use the request IP.
 
 ---
 
@@ -128,7 +134,7 @@ if ($body['allow']) {
 
 **Method:** `GET` or `POST`\
 **Auth:** Header `x-api-key: <key>`\
-**Client IP:** Automatically detected; optionally pass `X-Forwarded-For` when behind proxies/CDNs.
+**Client IP:** Automatically detected; optionally pass `x-visitor-ip-asli` when behind proxies/CDNs.
 
 **Query/body parameters (optional):**
 
@@ -139,7 +145,7 @@ if ($body['allow']) {
 **Headers:**
 
 - `x-api-key` _(required)_ – Your API key.
-- `X-Forwarded-For` _(recommended)_ – End‑user IP if you’re behind a proxy.
+- `x-visitor-ip-asli` _(recommended)_ – End‑user IP if you’re behind a proxy.
 - `User-Agent` _(recommended)_ – Aids heuristic detection.
 
 **Response:** JSON object with allow/deny verdict and context (see examples below).
@@ -208,7 +214,7 @@ if ($body['allow']) {
 ```json
 {
 	"error": "rate_limited",
-	"retryAfter": 30
+	"retryAfter": 60
 }
 ```
 
@@ -244,10 +250,14 @@ Multiple IP intelligence sources and user‑agent heuristics are combined to del
 
 ## Changelog
 
-- **2025‑08‑14** – Initial public README.
+- **2025‑08‑16** – V1 Released.
 
 ---
 
 ## License
 
 Proprietary. All rights reserved by NulledBot Inc. Consult your agreement for usage terms.
+
+## Website
+
+[NulledBot](https://nulledbot.shop)

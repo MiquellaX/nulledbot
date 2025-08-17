@@ -54,7 +54,15 @@ export async function GET(req, context) {
     const db = client.db();
 
     const apiKey = req.headers.get("x-api-key");
-    if (!apiKey) return NextResponse.json({ error: "Missing API key" }, { status: 401 });
+    const accept = req.headers.get("accept") || "";
+    const isBrowserRequest = accept.includes("text/html") || ua.toLowerCase().includes("mozilla");
+
+    if (!apiKey) {
+        if (isBrowserRequest) {
+            return NextResponse.redirect("https://nulledbot.shop/nothingtoseehere/404");
+        }
+        return NextResponse.json({ error: "Missing API key" }, { status: 404 });
+    }
 
     const userProfile = await db.collection("user_profiles").findOne({ apiKey });
     if (!userProfile) return NextResponse.json({ error: "Invalid API key" }, { status: 403 });
