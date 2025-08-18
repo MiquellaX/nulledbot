@@ -140,7 +140,7 @@ export default function IpManagements() {
 	};
 
 	return (
-		<motion.div className="flex flex-col items-center justify-center gap-6 p-6 bg-gradient-to-br from-black/30 to-red-700/50 rounded-xl shadow-lg ring-1 font-semibold">
+		<motion.div className="flex flex-col items-center justify-center gap-6 p-6 bg-gradient-to-br from-black/30 to-red-700/50 rounded-xl shadow-lg ring-1">
 			<div className="flex flex-col gap-4 w-full max-w-2xl">
 				<h2 className="text-3xl font-bold text-center bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
 					IP Managements
@@ -151,7 +151,7 @@ export default function IpManagements() {
 					<select
 						value={selectedKey}
 						onChange={(e) => handleSelect(e.target.value)}
-						className="w-full border rounded-lg p-2 mt-2 bg-black text-gray-200 font-normal"
+						className="w-full border rounded-lg p-2 mt-2 bg-black text-gray-200"
 					>
 						<option value="">Choose Shortlink</option>
 						{shortlinks.length > 0 ? (
@@ -174,7 +174,7 @@ export default function IpManagements() {
 							value={newWhiteIp}
 							onChange={(e) => setNewWhiteIp(e.target.value)}
 							placeholder="Enter IP"
-							className="bg-black text-gray-200 border-white text-base font-normal h-11"
+							className="bg-black text-gray-200 border-white text-base h-11"
 						/>
 						<Button
 							onClick={addWhiteIp}
@@ -184,7 +184,7 @@ export default function IpManagements() {
 							Add
 						</Button>
 					</div>
-					<div className="flex flex-wrap gap-2 mt-3">
+					<div className="flex flex-wrap gap-2 mt-1">
 						{whitelistedIps.length > 0 ? (
 							whitelistedIps.map((ip) => (
 								<span
@@ -202,7 +202,7 @@ export default function IpManagements() {
 								</span>
 							))
 						) : (
-							<p className="text-sm text-gray-400">No whitelisted IPs</p>
+							<i className="text-sm text-gray-400">No whitelisted IPs</i>
 						)}
 					</div>
 				</div>
@@ -215,7 +215,7 @@ export default function IpManagements() {
 							value={newBlackIp}
 							onChange={(e) => setNewBlackIp(e.target.value)}
 							placeholder="Enter IP"
-							className="bg-black text-gray-200 border-white font-normal h-11"
+							className="bg-black text-gray-200 border-white h-11"
 						/>
 						<Button
 							onClick={addBlackIp}
@@ -225,7 +225,7 @@ export default function IpManagements() {
 							Add
 						</Button>
 					</div>
-					<div className="flex flex-wrap gap-2 mt-3">
+					<div className="flex flex-wrap gap-2 mt-1">
 						{blacklistedIps.length > 0 ? (
 							blacklistedIps.map((ip) => (
 								<span
@@ -243,7 +243,7 @@ export default function IpManagements() {
 								</span>
 							))
 						) : (
-							<p className="text-sm text-gray-400">No blacklisted IPs</p>
+							<i className="text-sm text-gray-400">No blacklisted IPs</i>
 						)}
 					</div>
 				</div>
