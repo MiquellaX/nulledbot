@@ -27,9 +27,9 @@ export default function Subscription({}) {
 	const plans = [
 		{
 			name: "Free",
-			priceWeekly: "$0",
-			priceMonthly: "$0",
-			priceYearly: "$0",
+			priceWeekly: "Rp.0",
+			priceMonthly: "Rp.0",
+			priceYearly: "Rp.0",
 			features: ["Basic bot filtering", "Community support", "Limited stats"],
 			urls: {
 				weekly: "/nulledbot/signup",
@@ -39,9 +39,9 @@ export default function Subscription({}) {
 		},
 		{
 			name: "Pro",
-			priceWeekly: "$10",
-			priceMonthly: "$29",
-			priceYearly: "$299",
+			priceWeekly: "Rp.150.000",
+			priceMonthly: "Rp.450.000",
+			priceYearly: "Rp.2.100.000",
 			features: [
 				"Advanced bot protection",
 				"Geo/IP filtering",
@@ -55,9 +55,9 @@ export default function Subscription({}) {
 		},
 		{
 			name: "Enterprise",
-			priceWeekly: "$29",
-			priceMonthly: "$99",
-			priceYearly: "$999",
+			priceWeekly: "Rp.450.000",
+			priceMonthly: "Rp.1.485.000",
+			priceYearly: "Rp.3.240.000",
 			features: ["Custom rules", "Priority support", "Unlimited shortlinks"],
 			urls: {
 				weekly:
@@ -69,6 +69,7 @@ export default function Subscription({}) {
 			},
 		},
 	];
+
 	const getPrice = (plan) => {
 		switch (billing) {
 			case "weekly":
@@ -93,8 +94,10 @@ export default function Subscription({}) {
 				`price${billing.charAt(0).toUpperCase() + billing.slice(1)}`
 			].replace("$", "")
 		);
-		const conversionRate = 15000;
-		const amount = usdAmount * conversionRate;
+
+		const rupiahString =
+			plan[`price${billing.charAt(0).toUpperCase() + billing.slice(1)}`];
+		const amount = parseInt(rupiahString.replace(/[Rp.\s]/g, ""));
 
 		const createTransactionAndPay = async () => {
 			const res = await fetch("/api/midtrans", {
