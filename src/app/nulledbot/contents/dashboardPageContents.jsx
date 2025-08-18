@@ -16,12 +16,12 @@ import {
 	SheetTitle,
 	SheetDescription,
 } from "@/components/ui/sheet";
+import Subscription from "./tabs/subscriptions";
 
 const navItems = [
 	{ name: "Account", href: "/nulledbot/dashboard?tab=account" },
 	{ name: "Shortlink & Blocker", href: "/nulledbot/dashboard?tab=shortlink" },
 	{ name: "Tutorial", href: "/nulledbot/dashboard?tab=tutorial" },
-	{ name: "Customization", href: "/nulledbot/dashboard?tab=customization" },
 	{ name: "IP Management", href: "/nulledbot/dashboard?tab=ip_management" },
 	{ name: "Subscription", href: "/nulledbot/dashboard?tab=subscription" },
 ];
@@ -203,6 +203,12 @@ export default function DashboardPageContents() {
 					setOpenApiKey={setOpenApiKey}
 					subscriptionType={subscriptionType}
 				/>
+			);
+		} else if (tab === "subscription") {
+			return (
+				<div className="relative min-h-[60vh] px-8 text-center max-w-4xl mx-auto flex flex-col justify-center">
+					<Subscription />
+				</div>
 			);
 		} else {
 			return (

@@ -1,10 +1,12 @@
 import "./globals.css";
 import { Toaster } from "sonner";
 import Script from "next/script";
-import Head from "next/head";
 
 export const metadata = {
     title: `NulledBot #HOME`,
+    icons: {
+        icon: "/favicon.ico",
+    },
     description: `NulledBot is a powerful, developer-friendly antibot security platform designed to detect, block, and filter malicious traffic including bots, proxies, VPNs, and suspicious IPs.`,
     keywords: [
         'antibot', 'security', 'ip filtering', 'bot protection', 'proxy detection',

@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaTimes } from "react-icons/fa";
 
 export default function CustomerInfoModal({ isOpen, onClose, onSubmit }) {
-	const [name, setName] = useState("");
+	const [username, setUserName] = useState("");
 	const [email, setEmail] = useState("");
 	const [key, setKey] = useState("");
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
-		onSubmit({ name, email, key });
+		onSubmit({ username, email, key });
 		onClose();
 	};
 
@@ -32,7 +32,7 @@ export default function CustomerInfoModal({ isOpen, onClose, onSubmit }) {
 						transition={{ duration: 0.2 }}
 					>
 						<div className="flex justify-between">
-							<h2 className="text-xl font-bold mb-4">Buyer SignUp</h2>
+							<h2 className="text-xl font-bold mb-4">Buyer Info</h2>
 							<button type="button" onClick={onClose} className="mb-10">
 								<FaTimes className="delete-icon" />
 							</button>
@@ -40,9 +40,9 @@ export default function CustomerInfoModal({ isOpen, onClose, onSubmit }) {
 						<form onSubmit={handleSubmit} className="space-y-4">
 							<input
 								type="text"
-								placeholder="Full Name"
-								value={name}
-								onChange={(e) => setName(e.target.value)}
+								placeholder="Username"
+								value={username}
+								onChange={(e) => setUserName(e.target.value)}
 								className="w-full border rounded-lg p-2"
 								required
 							/>
