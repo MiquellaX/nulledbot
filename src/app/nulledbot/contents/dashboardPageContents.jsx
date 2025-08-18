@@ -17,6 +17,7 @@ import {
 	SheetDescription,
 } from "@/components/ui/sheet";
 import Subscription from "./tabs/subscriptions";
+import IpManagements from "./tabs/ipManagement";
 
 const navItems = [
 	{ name: "Account", href: "/nulledbot/dashboard?tab=account" },
@@ -208,6 +209,12 @@ export default function DashboardPageContents() {
 			return (
 				<div className="relative min-h-[60vh] px-8 text-center max-w-4xl mx-auto flex flex-col justify-center">
 					<Subscription />
+				</div>
+			);
+		} else if (tab === "ip_management") {
+			return (
+				<div className="relative min-h-[60vh] px-8 text-center max-w-4xl mx-auto flex flex-col justify-center">
+					<IpManagements />
 				</div>
 			);
 		} else {

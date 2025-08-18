@@ -176,7 +176,7 @@ export default function VisitorsModal({ data, shortlinkKey, onClose }) {
 				</div>
 
 				<button onClick={onClose}>
-					<FaTimes className="delete-icon absolute top-7 right-10" />
+					<FaTimes className="close-icon absolute top-7 right-10" />
 				</button>
 
 				{loading ? (

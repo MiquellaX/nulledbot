@@ -30,7 +30,7 @@ export async function POST(req) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
-    const { url, secondaryUrl, key, statusCode, allowedDevice, connectionType, allowedCountry, allowedIsp } = await req.json();
+    const { url, secondaryUrl, key, statusCode, allowedDevice, connectionType, allowedCountry, allowedIsp, whitelistedIps, blacklistedIps } = await req.json();
 
     if (!url || !key) {
         return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400 });
@@ -58,7 +58,7 @@ export async function POST(req) {
         );
     }
 
-    if (subscriptionType === "free" && (allowedDevice || connectionType || allowedCountry || allowedIsp || secondaryUrl)) {
+    if (subscriptionType === "free" && (allowedDevice || connectionType || allowedCountry || allowedIsp || secondaryUrl || whitelistedIps || blacklistedIps)) {
         return new Response(
             JSON.stringify({
                 error: "Free users cannot use advanced filters.",
@@ -84,6 +84,8 @@ export async function POST(req) {
         primaryUrlStatus,
         secondaryUrlStatus,
         statusCode,
+        whitelistedIps: whitelistedIps || [],
+        blacklistedIps: blacklistedIps || [],
         createdAt: new Date(),
         updatedAt: new Date(),
     };
@@ -94,6 +96,8 @@ export async function POST(req) {
         doc.allowedCountry = allowedCountry;
         doc.allowedIsp = allowedIsp;
         doc.secondaryUrl = secondaryUrl;
+        doc.whitelistedIps = whitelistedIps || [];
+        doc.blacklistedIps = blacklistedIps || [];
     }
 
     await db.collection("shortlinks").insertOne(doc);
@@ -117,6 +121,8 @@ export async function PUT(req) {
         connectionType,
         allowedCountry,
         allowedIsp,
+        whitelistedIps,
+        blacklistedIps
     } = await req.json();
 
     if (!originalKey || !key || !url) {
@@ -154,9 +160,11 @@ export async function PUT(req) {
         if (allowedCountry !== undefined) updateFields.allowedCountry = allowedCountry;
         if (allowedIsp !== undefined) updateFields.allowedIsp = allowedIsp;
         if (secondaryUrl !== undefined) updateFields.secondaryUrl = secondaryUrl || null;
+        if (whitelistedIps !== undefined) updateFields.whitelistedIps = whitelistedIps || [];
+        if (blacklistedIps !== undefined) updateFields.blacklistedIps = blacklistedIps || [];
     }
 
-    if (subscriptionType === "free" && (allowedDevice || connectionType || allowedCountry || allowedIsp || secondaryUrl)) {
+    if (subscriptionType === "free" && (allowedDevice || connectionType || allowedCountry || allowedIsp || secondaryUrl || whitelistedIps || blacklistedIps)) {
         return new Response(
             JSON.stringify({
                 error: "Free users cannot use advanced filters.",
@@ -183,18 +191,41 @@ export async function PATCH(req) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
-    const { key, newStatus } = await req.json();
+    const { key, newStatus, whitelistedIps, blacklistedIps } = await req.json();
 
-    if (!key || !newStatus) {
-        return new Response(JSON.stringify({ error: "Missing fields" }), { status: 400 });
+    if (!key) {
+        return new Response(JSON.stringify({ error: "Missing key" }), { status: 400 });
     }
+
+    const username = session.user.username;
+    const subscriptionType = await getSubscriptionType(username);
 
     const client = await clientPromise;
     const db = client.db();
 
+    const updateFields = { updatedAt: new Date() };
+
+    if (newStatus !== undefined) updateFields.status = newStatus;
+
+    if (subscriptionType !== "free") {
+        if (whitelistedIps !== undefined) {
+            updateFields.whitelistedIps = Array.isArray(whitelistedIps) ? whitelistedIps : [];
+        }
+        if (blacklistedIps !== undefined) {
+            updateFields.blacklistedIps = Array.isArray(blacklistedIps) ? blacklistedIps : [];
+        }
+    } else {
+        if (whitelistedIps || blacklistedIps) {
+            return new Response(
+                JSON.stringify({ error: "Free users cannot use advanced filters." }),
+                { status: 403 }
+            );
+        }
+    }
+
     const result = await db.collection("shortlinks").updateOne(
-        { owner: session.user.username, key },
-        { $set: { status: newStatus, updatedAt: new Date() } }
+        { owner: username, key },
+        { $set: updateFields }
     );
 
     if (result.matchedCount === 0) {

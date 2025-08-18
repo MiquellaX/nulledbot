@@ -130,7 +130,7 @@ function Modal({
 							className="absolute top-3 right-4 text-zinc-500 hover:text-white text-xl"
 							aria-label="Close modal"
 						>
-							<FaTimes className="delete-icon" />
+							<FaTimes className="close-icon" />
 						</button>
 					</motion.div>
 				</motion.div>

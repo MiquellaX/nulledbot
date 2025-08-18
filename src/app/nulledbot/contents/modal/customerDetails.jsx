@@ -34,7 +34,7 @@ export default function CustomerInfoModal({ isOpen, onClose, onSubmit }) {
 						<div className="flex justify-between">
 							<h2 className="text-xl font-bold mb-4">Buyer Info</h2>
 							<button type="button" onClick={onClose} className="mb-10">
-								<FaTimes className="delete-icon" />
+								<FaTimes className="close-icon" />
 							</button>
 						</div>
 						<form onSubmit={handleSubmit} className="space-y-4">
