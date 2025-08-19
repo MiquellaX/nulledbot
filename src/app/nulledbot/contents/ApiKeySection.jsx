@@ -34,27 +34,6 @@ export default function ApiKeySection({ username }) {
 		fetchApiKey();
 	}, [username]);
 
-	async function regenerateApiKey() {
-		setLoading(true);
-		setError("");
-		try {
-			const res = await fetch(`/api/account/regenerate`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ username }),
-			});
-			const data = await res.json();
-			if (data.success && data.apiKey) {
-				setApiKey(data.apiKey);
-			} else {
-				setError(data.error || "Failed to regenerate API key");
-			}
-		} catch (err) {
-			setError("Failed to regenerate API key");
-		}
-		setLoading(false);
-	}
-
 	return (
 		<div className="flex flex-col items-center gap-1">
 			<span
@@ -64,14 +43,6 @@ export default function ApiKeySection({ username }) {
 			>
 				{loading ? <Loading className={"w-5 h-5"} /> : apiKey || "NO API KEY"}
 			</span>
-
-			<button
-				className="font-normal bg-black/80 text-white h-7 px-2 rounded hover:ring-2 hover:ring-amber-500 transition duration-300 cursor-pointer"
-				onClick={regenerateApiKey}
-				disabled={loading || !username}
-			>
-				Generate New API Key
-			</button>
 			{error && <span className="text-red-700 ml-2">{error}</span>}
 			{copied && (
 				<span className="text-sm font-bold text-green-600">

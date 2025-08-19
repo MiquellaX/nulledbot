@@ -22,6 +22,28 @@ const CLOUD_PROVIDERS = [
     "linode", "vultr", "akamai", "fastly"
 ];
 
+const SUBSCRIPTION_LIMITS = {
+    "free_7day": 100,
+    "free_month": 100,
+    "free_year": 100,
+    "pro_7day": 32000,
+    "pro_1month": 62000,
+    "pro_1year": 122000,
+    "enterprise_7day": 420000,
+    "enterprise_1month": 860000,
+    "enterprise_1year": 1620000,
+};
+
+function getSubscriptionEnd(startDate, duration) {
+    const start = new Date(startDate);
+    switch (duration) {
+        case "7day": return new Date(start.setDate(start.getDate() + 7));
+        case "month": return new Date(start.setMonth(start.getMonth() + 1));
+        case "year": return new Date(start.setFullYear(start.getFullYear() + 1));
+        default: return new Date(start.setDate(start.getDate() + 7));
+    }
+}
+
 function handleBlock(reason, statusCode) {
     const code = Number(statusCode);
     if ([403, 404].includes(code)) {
@@ -166,6 +188,11 @@ export async function GET(req, context) {
     const shortlink = await db.collection("shortlinks").findOne({ key });
     const { ipData, ipwhoData, success } = await fetchIPInfo(ip);
     const ipType = (ipData?.type || "").toLowerCase();
+    const { subscription, subscriptionType, subscriptionStart } = userProfile;
+    const subKey = `${subscriptionType}_${subscription}`;
+    const limit = SUBSCRIPTION_LIMITS[subKey];
+    const subscriptionStartDate = new Date(subscriptionStart);
+    const subscriptionEndDate = getSubscriptionEnd(subscriptionStartDate, subscription);
 
     if (!apiKey) {
         return isBrowser
@@ -201,6 +228,7 @@ export async function GET(req, context) {
                     ip,
                     userAgent: ua,
                     device: deviceType,
+                    apiKey,
                     location: {
                         country: ipwhoData.country,
                         country_code: ipwhoData.country_code,
@@ -245,6 +273,7 @@ export async function GET(req, context) {
                     ip,
                     userAgent: ua,
                     device: deviceType,
+                    apiKey,
                     location: {
                         country: ipwhoData.country,
                         country_code: ipwhoData.country_code,
@@ -296,6 +325,7 @@ export async function GET(req, context) {
                 ip,
                 userAgent: ua,
                 device: deviceType,
+                apiKey,
                 location: {
                     country: ipwhoData.country,
                     country_code: ipwhoData.country_code,
@@ -323,6 +353,45 @@ export async function GET(req, context) {
 
     if (!finalUrl) {
         return NextResponse.json({ error: "No valid destination found" }, { status: 502 });
+    }
+
+    const today = new Date().toISOString().split("T")[0]; // e.g., "2025-08-19"
+
+    const usageDoc = await db.collection("daily_usage").findOneAndUpdate(
+        {
+            apiKey,
+            shortlinkKey: shortlink.key,
+            date: today,
+        },
+        {
+            $inc: { count: 1 },
+            $setOnInsert: { createdAt: new Date() },
+        },
+        { upsert: true, returnDocument: "after" }
+    );
+
+    const totalUsage = await db.collection("daily_usage").aggregate([
+        {
+            $match: {
+                apiKey,
+                date: {
+                    $gte: subscriptionStartDate.toISOString().split("T")[0],
+                    $lte: subscriptionEndDate.toISOString().split("T")[0],
+                },
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$count" },
+            },
+        },
+    ]).toArray();
+
+    const totalCount = totalUsage[0]?.total || 0;
+
+    if (totalCount > limit) {
+        return NextResponse.json({ error: "Subscription request limit reached." }, { status: 429 });
     }
 
     return NextResponse.redirect(finalUrl);

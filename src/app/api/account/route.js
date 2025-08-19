@@ -14,7 +14,6 @@ export async function GET(req) {
         const client = await clientPromise;
         const db = client.db();
 
-        // Ensure API Key exists
         let userProfile = await db.collection("user_profiles").findOne({ username });
         let apiKey = userProfile?.apiKey;
         if (!apiKey) {
@@ -26,7 +25,6 @@ export async function GET(req) {
             );
         }
 
-        // Aggregation: count total, humans, bots, and blocked visitors
         const result = await db.collection("visitors").aggregate([
             {
                 $lookup: {
