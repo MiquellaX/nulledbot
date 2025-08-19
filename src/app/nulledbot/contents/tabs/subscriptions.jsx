@@ -39,9 +39,9 @@ export default function Subscription({}) {
 		},
 		{
 			name: "Pro",
-			priceWeekly: "Rp.150.000",
-			priceMonthly: "Rp.450.000",
-			priceYearly: "Rp.2.100.000",
+			priceWeekly: "Rp.143.000",
+			priceMonthly: "Rp.312.000",
+			priceYearly: "Rp.1.104.000",
 			features: [
 				"Advanced bot protection",
 				"Geo/IP filtering",
@@ -55,9 +55,9 @@ export default function Subscription({}) {
 		},
 		{
 			name: "Enterprise",
-			priceWeekly: "Rp.450.000",
-			priceMonthly: "Rp.1.485.000",
-			priceYearly: "Rp.3.240.000",
+			priceWeekly: "Rp.412.000",
+			priceMonthly: "Rp.1.223.000",
+			priceYearly: "Rp.2.234.000",
 			features: ["Custom rules", "Priority support", "Unlimited shortlinks"],
 			urls: {
 				weekly:
